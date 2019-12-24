@@ -6,11 +6,11 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pl.edu.agh.plonka.bartlomiej.diseasesdiagnoser.exception.CreateRuleException;
-import pl.edu.agh.plonka.bartlomiej.diseasesdiagnoser.exception.RuleAlreadyExistsException;
-import pl.edu.agh.plonka.bartlomiej.diseasesdiagnoser.model.Patient;
-import pl.edu.agh.plonka.bartlomiej.diseasesdiagnoser.model.RequiredEntitiesToLearn;
-import pl.edu.agh.plonka.bartlomiej.diseasesdiagnoser.model.rule.Rule;
+import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
+import pl.edu.agh.plonka.bartlomiej.menes.exception.RuleAlreadyExistsException;
+import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.RequiredEntitiesToLearn;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 
 import java.io.File;
 import java.util.Collection;
@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
-import static pl.edu.agh.plonka.bartlomiej.diseasesdiagnoser.utils.Constants.GENERATED_RULE_PREFIX;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.GENERATED_RULE_PREFIX;
 
 public class PatientsService {
 
