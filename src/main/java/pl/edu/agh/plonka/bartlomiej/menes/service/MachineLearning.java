@@ -13,7 +13,6 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 import static java.lang.String.format;
-import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.Category.Predicate.*;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.ComplexComparator.sortStar;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.*;
 
@@ -49,16 +48,16 @@ public class MachineLearning {
 
     private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet) {
         Collection<Callable<Collection<Rule>>> callables = new ArrayList<>();
-        callables.addAll(prepareCallable(trainingSet, ontology.getDiseases().values(), HAS_DISEASE));
-        callables.addAll(prepareCallable(trainingSet, ontology.getTests().values(), SHOULD_MAKE_TEST));
-        callables.addAll(prepareCallable(trainingSet, ontology.getTreatments().values(), SHOULD_BE_TREATED_WITH));
-        callables.addAll(prepareCallable(trainingSet, ontology.getCauses().values(), CAUSE_OF_DISEASE));
+//        callables.addAll(prepareCallable(trainingSet, ontology.getDiseases().values(), HAS_DISEASE));
+//        callables.addAll(prepareCallable(trainingSet, ontology.getTests().values(), SHOULD_MAKE_TEST));
+//        callables.addAll(prepareCallable(trainingSet, ontology.getTreatments().values(), SHOULD_BE_TREATED_WITH));
+//        callables.addAll(prepareCallable(trainingSet, ontology.getCauses().values(), CAUSE_OF_DISEASE));
         return callables;
     }
 
     private Collection<Callable<Collection<Rule>>> prepareCallable(Set<Patient> trainingSet,
                                                                    Collection<Entity> entities,
-                                                                   Category.Predicate categoryPredicate) {
+                                                                   String categoryPredicate) {
         Collection<Callable<Collection<Rule>>> callables = new ArrayList<>();
         for (Entity entity : entities) {
             callables.add(() -> sequentialCovering(trainingSet, new Category(entity, categoryPredicate)));
@@ -242,24 +241,7 @@ public class MachineLearning {
     }
 
     private String generateRuleName(Category category, int ruleIdx) {
-        String predicate;
-        switch (category.getPredicate()) {
-            case CAUSE_OF_DISEASE:
-                predicate = CAUSE_OF_DISEASE_PROPERTY;
-                break;
-            case SHOULD_BE_TREATED_WITH:
-                predicate = SHOULD_BE_TREATED_WITH_PROPERTY;
-                break;
-            case SHOULD_MAKE_TEST:
-                predicate = SHOULD_MAKE_TEST_PROPERTY;
-                break;
-            case HAS_DISEASE:
-                predicate = HAS_DISEASE_PROPERTY;
-                break;
-            default:
-                predicate = "unknownPredicate";
-        }
-        return format("%s_%s_%s_%d", GENERATED_RULE_PREFIX, predicate, category.getEntity(), ruleIdx);
+        return format("%s_%s_%s_%d", GENERATED_RULE_PREFIX, category.getPredicate(), category.getEntity(), ruleIdx);
     }
 
     private Collection<Rule> simplifyRules(Collection<Rule> rules) {
