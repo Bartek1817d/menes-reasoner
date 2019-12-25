@@ -200,24 +200,25 @@ public class Complex implements Comparable<Complex> {
     }
 
     public boolean isPatientCovered(Patient patient) {
-        if (!covers(symptomSelector, patient.getSymptoms())) {
-            return false;
-        }
-        if (!covers(negativeTestsSelector, patient.getNegativeTests())) {
-            return false;
-        }
-        if (!covers(previousDiseasesSelector, patient.getPreviousDiseases())) {
-            return false;
-        }
-        if (!covers(ageSelector, patient.getAge())) {
-            return false;
-        }
-        if (!covers(heightSelector, patient.getHeight())) {
-            return false;
-        }
-        if (!covers(weightSelector, patient.getWeight())) {
-            return false;
-        }
+        //TODO
+//        if (!covers(symptomSelector, patient.getSymptoms())) {
+//            return false;
+//        }
+//        if (!covers(negativeTestsSelector, patient.getNegativeTests())) {
+//            return false;
+//        }
+//        if (!covers(previousDiseasesSelector, patient.getPreviousDiseases())) {
+//            return false;
+//        }
+//        if (!covers(ageSelector, patient.getAge())) {
+//            return false;
+//        }
+//        if (!covers(heightSelector, patient.getHeight())) {
+//            return false;
+//        }
+//        if (!covers(weightSelector, patient.getWeight())) {
+//            return false;
+//        }
         return true;
     }
 

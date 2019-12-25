@@ -161,19 +161,20 @@ public class OntologyWrapper {
     private Patient getPatient(OWLIndividual patientInd) {
         Patient patient = new Patient(renderer.render(patientInd));
 
-        setPatientStringProperty(patientInd, properties.firstNameProperty, patient::setFirstName);
-        setPatientStringProperty(patientInd, properties.lastNameProperty, patient::setLastName);
-        setPatientIntegerProperty(patientInd, properties.ageProperty, patient::setAge);
-        setPatientIntegerProperty(patientInd, properties.heightProperty, patient::setHeight);
-        setPatientIntegerProperty(patientInd, properties.weightProperty, patient::setWeight);
-
-        setPatientObjectProperty(patientInd, properties.symptomProperty, symptoms, patient::addSymptom);
-        setPatientObjectProperty(patientInd, properties.diseaseProperty, diseases, patient::addDisease);
-        setPatientObjectProperty(patientInd, properties.testProperty, tests, patient::addTest);
-        setPatientObjectProperty(patientInd, properties.negativeTestProperty, tests, patient::addNegativeTest);
-        setPatientObjectProperty(patientInd, properties.treatmentProperty, treatments, patient::addTreatment);
-        setPatientObjectProperty(patientInd, properties.causeProperty, causes, patient::addCause);
-        setPatientObjectProperty(patientInd, properties.previousOrCurrentDiseaseProperty, diseases, patient::addPreviousOrCurrentDisease);
+        //TODO
+//        setPatientStringProperty(patientInd, properties.firstNameProperty, patient::setFirstName);
+//        setPatientStringProperty(patientInd, properties.lastNameProperty, patient::setLastName);
+//        setPatientIntegerProperty(patientInd, properties.ageProperty, patient::setAge);
+//        setPatientIntegerProperty(patientInd, properties.heightProperty, patient::setHeight);
+//        setPatientIntegerProperty(patientInd, properties.weightProperty, patient::setWeight);
+//
+//        setPatientObjectProperty(patientInd, properties.symptomProperty, symptoms, patient::addSymptom);
+//        setPatientObjectProperty(patientInd, properties.diseaseProperty, diseases, patient::addDisease);
+//        setPatientObjectProperty(patientInd, properties.testProperty, tests, patient::addTest);
+//        setPatientObjectProperty(patientInd, properties.negativeTestProperty, tests, patient::addNegativeTest);
+//        setPatientObjectProperty(patientInd, properties.treatmentProperty, treatments, patient::addTreatment);
+//        setPatientObjectProperty(patientInd, properties.causeProperty, causes, patient::addCause);
+//        setPatientObjectProperty(patientInd, properties.previousOrCurrentDiseaseProperty, diseases, patient::addPreviousOrCurrentDisease);
 
         return patient;
     }
@@ -184,19 +185,20 @@ public class OntologyWrapper {
 
         setIndClass(properties.patientClass, patientInd);
 
-        setPatientIndStringProperty(patientInd, properties.firstNameProperty, patient.getFirstName());
-        setPatientIndStringProperty(patientInd, properties.lastNameProperty, patient.getLastName());
-        setPatientIndIntegerProperty(patientInd, properties.ageProperty, patient.getAge());
-        setPatientIndIntegerProperty(patientInd, properties.heightProperty, patient.getHeight());
-        setPatientIndIntegerProperty(patientInd, properties.weightProperty, patient.getWeight());
-
-        setPatientIndObjectProperty(patientInd, properties.symptomProperty, patient.getSymptoms());
-        setPatientIndObjectProperty(patientInd, properties.diseaseProperty, patient.getDiseases());
-        setPatientIndObjectProperty(patientInd, properties.testProperty, patient.getTests());
-        setPatientIndObjectProperty(patientInd, properties.negativeTestProperty, patient.getNegativeTests());
-        setPatientIndObjectProperty(patientInd, properties.treatmentProperty, patient.getTreatments());
-        setPatientIndObjectProperty(patientInd, properties.causeProperty, patient.getCauses());
-        setPatientIndObjectProperty(patientInd, properties.previousOrCurrentDiseaseProperty, patient.getPreviousDiseases());
+        //TODO
+//        setPatientIndStringProperty(patientInd, properties.firstNameProperty, patient.getFirstName());
+//        setPatientIndStringProperty(patientInd, properties.lastNameProperty, patient.getLastName());
+//        setPatientIndIntegerProperty(patientInd, properties.ageProperty, patient.getAge());
+//        setPatientIndIntegerProperty(patientInd, properties.heightProperty, patient.getHeight());
+//        setPatientIndIntegerProperty(patientInd, properties.weightProperty, patient.getWeight());
+//
+//        setPatientIndObjectProperty(patientInd, properties.symptomProperty, patient.getSymptoms());
+//        setPatientIndObjectProperty(patientInd, properties.diseaseProperty, patient.getDiseases());
+//        setPatientIndObjectProperty(patientInd, properties.testProperty, patient.getTests());
+//        setPatientIndObjectProperty(patientInd, properties.negativeTestProperty, patient.getNegativeTests());
+//        setPatientIndObjectProperty(patientInd, properties.treatmentProperty, patient.getTreatments());
+//        setPatientIndObjectProperty(patientInd, properties.causeProperty, patient.getCauses());
+//        setPatientIndObjectProperty(patientInd, properties.previousOrCurrentDiseaseProperty, patient.getPreviousDiseases());
 
 //        getInferredPatient(patient);
     }
@@ -292,11 +294,14 @@ public class OntologyWrapper {
         reasoner.flush();
         OWLNamedIndividual patientInd = factory.getOWLNamedIndividual(patient.getID(), prefixManager);
 
+        //TODO
+/*
         setPatientInferredObjectProperty(patientInd, properties.symptomProperty, symptoms, patient::getSymptoms, patient::setInferredSymptoms);
         setPatientInferredObjectProperty(patientInd, properties.diseaseProperty, diseases, patient::getDiseases, patient::setInferredDiseases);
         setPatientInferredObjectProperty(patientInd, properties.testProperty, tests, patient::getTests, patient::setInferredTests);
         setPatientInferredObjectProperty(patientInd, properties.treatmentProperty, treatments, patient::getTreatments, patient::setInferredTreatments);
         setPatientInferredObjectProperty(patientInd, properties.causeProperty, causes, patient::getCauses, patient::setInferredCauses);
+*/
 
         return patient;
     }
@@ -381,7 +386,8 @@ public class OntologyWrapper {
                 if (predicate.equals("hasDisease")) {
                     String pName = ((Variable) twoArgumentsAtom.getArgument1()).getName();
                     Patient p = (Patient) variables.get(pName);
-                    p.addDisease((Entity) twoArgumentsAtom.getArgument2());
+                    //TODO
+//                    p.addDisease((Entity) twoArgumentsAtom.getArgument2());
                 }
             }
         }
@@ -410,7 +416,8 @@ public class OntologyWrapper {
         Variable ageVariable = (Variable) atom.getArgument2();
         Patient p = (Patient) variables.get(patientVariable.getName());
         Range<Integer> ageRange = calculateAgeRange(rule, ageVariable);
-        p.setAge(selectNumberFromRange(ageRange));
+
+//        p.setAge(selectNumberFromRange(ageRange));
     }
 
     private Range<Integer> calculateAgeRange(Rule rule, Variable ageVariable) {

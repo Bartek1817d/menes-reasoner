@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,7 +17,7 @@ public class Entity {
     private String id;
     private String label;
     private String comment;
-    private Set<Entity> classes;
+    private final Set<Entity> classes = new HashSet<>();
 
     private Map<String, String> languageLabelMap = new HashMap<>();
     private Map<String, String> languageCommentMap = new HashMap<>();
@@ -59,7 +60,8 @@ public class Entity {
     }
 
     public void setClasses(Set<Entity> classes) {
-        this.classes = classes;
+        this.classes.clear();
+        this.classes.addAll(classes);
     }
 
     public void addClasses(Set<Entity> classes) {

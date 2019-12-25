@@ -14,10 +14,12 @@ public class RequiredEntitiesToLearn {
     }
 
     public boolean invalidPatient(Patient patient) {
-        return ((diseases && patient.getInferredDiseases().isEmpty() && patient.getDiseases().isEmpty()) ||
-                (tests && patient.getInferredTests().isEmpty() && patient.getTests().isEmpty()) ||
-                (treatments && patient.getInferredTreatments().isEmpty() && patient.getTreatments().isEmpty()) ||
-                (causes && patient.getInferredCauses().isEmpty()) && patient.getCauses().isEmpty());
+        //TODO
+//        return ((diseases && patient.getInferredDiseases().isEmpty() && patient.getDiseases().isEmpty()) ||
+//                (tests && patient.getInferredTests().isEmpty() && patient.getTests().isEmpty()) ||
+//                (treatments && patient.getInferredTreatments().isEmpty() && patient.getTreatments().isEmpty()) ||
+//                (causes && patient.getInferredCauses().isEmpty()) && patient.getCauses().isEmpty());
+        return false;
 
     }
 }
