@@ -27,6 +27,10 @@ public class Patient extends Entity implements Comparable<Patient> {
     private final Map<String, Set<Integer>> integerProperties = new HashMap<>();
     private final Map<String, Set<Entity>> entityProperties = new HashMap<>();
 
+    private final Map<String, Set<String>> inferredStringProperties = new HashMap<>();
+    private final Map<String, Set<Integer>> inferredIntegerProperties = new HashMap<>();
+    private final Map<String, Set<Entity>> inferredEntityProperties = new HashMap<>();
+
     private float evaluation;
 
     public Patient() {
@@ -124,5 +128,29 @@ public class Patient extends Entity implements Comparable<Patient> {
             values.add(value);
             propertyMap.put(propertyName, values);
         }
+    }
+
+    public Map<String, Set<String>> getStringProperties() {
+        return stringProperties;
+    }
+
+    public Map<String, Set<Integer>> getIntegerProperties() {
+        return integerProperties;
+    }
+
+    public Map<String, Set<Entity>> getEntityProperties() {
+        return entityProperties;
+    }
+
+    public Map<String, Set<String>> getInferredStringProperties() {
+        return inferredStringProperties;
+    }
+
+    public Map<String, Set<Integer>> getInferredIntegerProperties() {
+        return inferredIntegerProperties;
+    }
+
+    public Map<String, Set<Entity>> getInferredEntityProperties() {
+        return inferredEntityProperties;
     }
 }
