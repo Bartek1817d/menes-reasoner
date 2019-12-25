@@ -1,28 +1,22 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model;
 
-import javafx.beans.property.SetProperty;
-import javafx.beans.property.SimpleSetProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class Entity {
 
     private final Logger LOG = LoggerFactory.getLogger(getClass());
 
-    private final StringProperty id = new SimpleStringProperty();
-    private final StringProperty label = new SimpleStringProperty();
-    private final StringProperty comment = new SimpleStringProperty();
-    private final SetProperty<Entity> classes = new SimpleSetProperty<>(
-            FXCollections.observableSet(new HashSet<>()));
+    private String id;
+    private String label;
+    private String comment;
+    private Set<Entity> classes;
 
     private Map<String, String> languageLabelMap = new HashMap<>();
     private Map<String, String> languageCommentMap = new HashMap<>();
@@ -31,50 +25,41 @@ public class Entity {
     }
 
     public Entity(String id) {
-        this.id.set(id);
+        this.id = id;
     }
 
     public String getID() {
-        return id.get();
+        return id;
     }
 
     public void setID(String id) {
-        this.id.set(id);
+        this.id = id;
     }
 
     public String getLabel() {
-        return label.get();
-    }
-
-    public void setLabel(String label) {
-        this.label.set(label);
-        this.languageLabelMap.put("en", label);
-    }
-
-    public ObservableValue<String> getObservableLabel() {
         return label;
     }
 
+    public void setLabel(String label) {
+        this.label = label;
+        this.languageLabelMap.put("en", label);
+    }
+
     public String getComment() {
-        return comment.get();
-    }
-
-    public void setComment(String comment) {
-        this.comment.set(comment);
-        this.languageCommentMap.put("en", comment);
-    }
-
-    public ObservableValue<String> getObservableComment() {
         return comment;
     }
 
+    public void setComment(String comment) {
+        this.comment = comment;
+        this.languageCommentMap.put("en", comment);
+    }
+
     public Set<Entity> getClasses() {
-        return classes.get();
+        return classes;
     }
 
     public void setClasses(Set<Entity> classes) {
-        this.classes.clear();
-        this.classes.addAll(classes);
+        this.classes = classes;
     }
 
     public void addClasses(Set<Entity> classes) {
@@ -87,14 +72,14 @@ public class Entity {
 
     @Override
     public String toString() {
-        return label.get() != null ? label.get() : id.get();
+        return isNotBlank(label) ? label : id;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id.get() == null) ? 0 : id.get().hashCode());
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
     }
 
@@ -107,10 +92,10 @@ public class Entity {
         if (getClass() != obj.getClass())
             return false;
         Entity other = (Entity) obj;
-        if (id.get() == null) {
-            return other.id.get() == null;
+        if (id == null) {
+            return other.id == null;
         } else {
-            return id.get().equals(other.id.get());
+            return id.equals(other.id);
         }
     }
 
@@ -132,10 +117,10 @@ public class Entity {
 
     public void setLanguage() {
         if (languageLabelMap.containsKey("en"))
-            this.label.setValue(languageLabelMap.get("en"));
+            this.label = languageLabelMap.get("en");
         else
-            this.label.setValue(id.getValue());
+            this.label = id;
         if (languageCommentMap.containsKey("en"))
-            this.comment.setValue(languageCommentMap.get("en"));
+            this.comment = languageCommentMap.get("en");
     }
 }
