@@ -246,20 +246,7 @@ public class Complex implements Comparable<Complex> {
         rule.addBodyAtoms(createEntityAtoms(patientVariable, PREVIOUS_DISEASE_PROPERTY, previousDiseasesSelector));
         rule.addBodyAtoms(createEntityAtoms(patientVariable, NEGATIVE_TEST_PROPERTY, negativeTestsSelector));
 
-        switch (category.getPredicate()) {
-            case HAS_DISEASE:
-                rule.addHeadAtoms(createEntityAtoms(patientVariable, HAS_DISEASE_PROPERTY, singleton(category.getEntity())));
-                break;
-            case SHOULD_MAKE_TEST:
-                rule.addHeadAtoms(createEntityAtoms(patientVariable, SHOULD_MAKE_TEST_PROPERTY, singleton(category.getEntity())));
-                break;
-            case SHOULD_BE_TREATED_WITH:
-                rule.addHeadAtoms(createEntityAtoms(patientVariable, SHOULD_BE_TREATED_WITH_PROPERTY, singleton(category.getEntity())));
-                break;
-            case CAUSE_OF_DISEASE:
-                rule.addHeadAtoms(createEntityAtoms(patientVariable, CAUSE_OF_DISEASE_PROPERTY, singleton(category.getEntity())));
-                break;
-        }
+        rule.addHeadAtoms(createEntityAtoms(patientVariable, category.getPredicate(), singleton(category.getEntity())));
 
         return rule;
     }

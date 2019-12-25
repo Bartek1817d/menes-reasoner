@@ -16,7 +16,6 @@ public class Category {
     }
 
     public boolean assertPatientInCategory(Patient patient) {
-
         Set<Entity> values = patient.getEntityProperties().get(predicate);
         Set<Entity> inferredValues = patient.getInferredEntityProperties().get(predicate);
 
