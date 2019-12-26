@@ -2,6 +2,7 @@ package pl.edu.agh.plonka.bartlomiej.menes.service;
 
 import com.clarkparsia.pellet.owlapiv3.PelletReasonerFactory;
 import com.google.common.collect.Range;
+import org.apache.commons.lang3.StringUtils;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
 import org.semanticweb.owlapi.io.OWLObjectRenderer;
@@ -35,7 +36,6 @@ import java.util.regex.Pattern;
 
 import static com.google.common.collect.BoundType.OPEN;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.semanticweb.owlapi.search.EntitySearcher.getDataPropertyValues;
 import static org.semanticweb.owlapi.search.EntitySearcher.getObjectPropertyValues;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -179,15 +179,15 @@ public class OntologyWrapper {
     private Patient getPatient(OWLIndividual patientInd) {
         Patient patient = new Patient(renderer.render(patientInd));
 
-        this.stringProperties.forEach(propertyName -> {
-            patient.setStringProperties(propertyName, getPatientStringProperties(patientInd, propertyName));
-        });
-        this.integerProperties.forEach(propertyName -> {
-            patient.setIntegerProperties(propertyName, getPatientIntegerProperties(patientInd, propertyName));
-        });
-        this.entityProperties.forEach(propertyName -> {
-            patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName, entities));
-        });
+        stringProperties.forEach(propertyName ->
+                patient.setStringProperties(propertyName, getPatientStringProperties(patientInd, propertyName))
+        );
+        integerProperties.forEach(propertyName ->
+                patient.setIntegerProperties(propertyName, getPatientIntegerProperties(patientInd, propertyName))
+        );
+        entityProperties.forEach(propertyName ->
+                patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName, entities))
+        );
 
         return patient;
     }
@@ -198,20 +198,15 @@ public class OntologyWrapper {
 
         setIndClass(properties.patientClass, patientInd);
 
-        //TODO
-//        setPatientIndStringProperty(patientInd, properties.firstNameProperty, patient.getFirstName());
-//        setPatientIndStringProperty(patientInd, properties.lastNameProperty, patient.getLastName());
-//        setPatientIndIntegerProperty(patientInd, properties.ageProperty, patient.getAge());
-//        setPatientIndIntegerProperty(patientInd, properties.heightProperty, patient.getHeight());
-//        setPatientIndIntegerProperty(patientInd, properties.weightProperty, patient.getWeight());
-//
-//        setPatientIndObjectProperty(patientInd, properties.symptomProperty, patient.getSymptoms());
-//        setPatientIndObjectProperty(patientInd, properties.diseaseProperty, patient.getDiseases());
-//        setPatientIndObjectProperty(patientInd, properties.testProperty, patient.getTests());
-//        setPatientIndObjectProperty(patientInd, properties.negativeTestProperty, patient.getNegativeTests());
-//        setPatientIndObjectProperty(patientInd, properties.treatmentProperty, patient.getTreatments());
-//        setPatientIndObjectProperty(patientInd, properties.causeProperty, patient.getCauses());
-//        setPatientIndObjectProperty(patientInd, properties.previousOrCurrentDiseaseProperty, patient.getPreviousDiseases());
+        stringProperties.forEach(propertyName ->
+                setPatientIndStringProperty(patientInd, propertyName, patient.getStringProperties(propertyName))
+        );
+        integerProperties.forEach(propertyName ->
+                setPatientIndIntegerProperty(patientInd, propertyName, patient.getIntegerProperties(propertyName))
+        );
+        entityProperties.forEach(propertyName ->
+                setPatientIndObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))
+        );
 
 //        getInferredPatient(patient);
     }
@@ -534,25 +529,37 @@ public class OntologyWrapper {
         setter.accept(inferredEntities);
     }
 
-    private void setPatientIndStringProperty(OWLIndividual patientInd, OWLDataProperty property, String value) {
-        if (isNotBlank(value)) {
-            ontologyManager.addAxiom(ontology,
-                    factory.getOWLDataPropertyAssertionAxiom(property, patientInd, value));
-        }
+    private void setPatientIndStringProperty(OWLIndividual patientInd, String propertyName, Collection<String> values) {
+        OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
+        values
+                .stream()
+                .filter(StringUtils::isNotBlank)
+                .forEach(v -> ontologyManager.addAxiom(
+                        ontology,
+                        factory.getOWLDataPropertyAssertionAxiom(property, patientInd, v)));
     }
 
-    private void setPatientIndIntegerProperty(OWLIndividual patientInd, OWLDataProperty property, Integer value) {
-        if (value != null && value > 0) {
-            ontologyManager.addAxiom(ontology,
-                    factory.getOWLDataPropertyAssertionAxiom(property, patientInd, value));
-        }
+    private void setPatientIndIntegerProperty(OWLIndividual patientInd, String propertyName, Collection<Integer> values) {
+        OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
+        values
+                .stream()
+                .filter(Objects::nonNull)
+                .forEach(v -> ontologyManager.addAxiom(
+                        ontology,
+                        factory.getOWLDataPropertyAssertionAxiom(property, patientInd, v)));
     }
 
-    private void setPatientIndObjectProperty(OWLIndividual patientInd, OWLObjectProperty property, Collection<Entity> entities) {
-        for (Entity entity : entities) {
-            ontologyManager.addAxiom(ontology, factory.getOWLObjectPropertyAssertionAxiom(property, patientInd,
-                    factory.getOWLNamedIndividual(entity.getID(), prefixManager)));
-        }
+    private void setPatientIndObjectProperty(OWLIndividual patientInd, String propertyName, Collection<Entity> entities) {
+        OWLObjectProperty property = factory.getOWLObjectProperty(propertyName, prefixManager);
+        entities
+                .stream()
+                .filter(Objects::nonNull)
+                .forEach(v -> ontologyManager.addAxiom(
+                        ontology,
+                        factory.getOWLObjectPropertyAssertionAxiom(
+                                property,
+                                patientInd,
+                                factory.getOWLNamedIndividual(v.getID(), prefixManager))));
     }
 
     private void setEntityIndClasses(OWLNamedIndividual entityInd, Collection<Entity> classes) {
