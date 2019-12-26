@@ -141,25 +141,14 @@ public class Complex implements Comparable<Complex> {
     }
 
     public boolean isPatientCovered(Patient patient) {
-        //TODO
-//        if (!covers(symptomSelector, patient.getSymptoms())) {
-//            return false;
-//        }
-//        if (!covers(negativeTestsSelector, patient.getNegativeTests())) {
-//            return false;
-//        }
-//        if (!covers(previousDiseasesSelector, patient.getPreviousDiseases())) {
-//            return false;
-//        }
-//        if (!covers(ageSelector, patient.getAge())) {
-//            return false;
-//        }
-//        if (!covers(heightSelector, patient.getHeight())) {
-//            return false;
-//        }
-//        if (!covers(weightSelector, patient.getWeight())) {
-//            return false;
-//        }
+        for (Map.Entry<String, EntitiesSelector> entry : entitySelectors.entrySet()) {
+            if (!covers(entry.getValue(), patient.getEntityProperties(entry.getKey())))
+                return false;
+        }
+        for (Map.Entry<String, LinearSelector<Integer>> entry : linearSelectors.entrySet()) {
+            if (!covers(entry.getValue(), patient.getIntegerProperty(entry.getKey())))
+                return false;
+        }
         return true;
     }
 

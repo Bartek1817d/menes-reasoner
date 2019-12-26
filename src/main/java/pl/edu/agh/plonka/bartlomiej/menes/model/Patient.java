@@ -134,23 +134,47 @@ public class Patient extends Entity implements Comparable<Patient> {
         return stringProperties;
     }
 
+    public Set<String> getStringProperties(String propertyName) {
+        return stringProperties.get(propertyName);
+    }
+
     public Map<String, Set<Integer>> getIntegerProperties() {
         return integerProperties;
+    }
+
+    public Set<Integer> getIntegerProperties(String propertyName) {
+        return integerProperties.get(propertyName);
     }
 
     public Map<String, Set<Entity>> getEntityProperties() {
         return entityProperties;
     }
 
+    public Set<Entity> getEntityProperties(String propertyName) {
+        return entityProperties.get(propertyName);
+    }
+
     public Map<String, Set<String>> getInferredStringProperties() {
         return inferredStringProperties;
+    }
+
+    public Set<String> getInferredStringProperties(String propertyName) {
+        return inferredStringProperties.get(propertyName);
     }
 
     public Map<String, Set<Integer>> getInferredIntegerProperties() {
         return inferredIntegerProperties;
     }
 
+    public Set<Integer> getInferredIntegerProperties(String propertyName) {
+        return inferredIntegerProperties.get(propertyName);
+    }
+
     public Map<String, Set<Entity>> getInferredEntityProperties() {
         return inferredEntityProperties;
+    }
+
+    public Set<Entity> getInferredEntityProperties(String propertyName) {
+        return inferredEntityProperties.get(propertyName);
     }
 }
