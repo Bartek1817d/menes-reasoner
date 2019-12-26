@@ -187,4 +187,16 @@ public class Patient extends Entity implements Comparable<Patient> {
     public Set<Entity> getInferredEntityProperties(String propertyName) {
         return inferredEntityProperties.get(propertyName);
     }
+
+    public void setInferredStringProperties(String propertyName, Collection<String> values) {
+        setProperties(inferredStringProperties, propertyName, values);
+    }
+
+    public void setInferredIntegerProperties(String propertyName, Collection<Integer> values) {
+        setProperties(inferredIntegerProperties, propertyName, values);
+    }
+
+    public void setInferredEntityProperties(String propertyName, Collection<Entity> values) {
+        setProperties(inferredEntityProperties, propertyName, values);
+    }
 }

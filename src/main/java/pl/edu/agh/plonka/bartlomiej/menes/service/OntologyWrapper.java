@@ -29,8 +29,6 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -186,7 +184,7 @@ public class OntologyWrapper {
                 patient.setIntegerProperties(propertyName, getPatientIntegerProperties(patientInd, propertyName))
         );
         entityProperties.forEach(propertyName ->
-                patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName, entities))
+                patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName))
         );
 
         return patient;
@@ -302,14 +300,18 @@ public class OntologyWrapper {
         reasoner.flush();
         OWLNamedIndividual patientInd = factory.getOWLNamedIndividual(patient.getID(), prefixManager);
 
-        //TODO
-/*
-        setPatientInferredObjectProperty(patientInd, properties.symptomProperty, symptoms, patient::getSymptoms, patient::setInferredSymptoms);
-        setPatientInferredObjectProperty(patientInd, properties.diseaseProperty, diseases, patient::getDiseases, patient::setInferredDiseases);
-        setPatientInferredObjectProperty(patientInd, properties.testProperty, tests, patient::getTests, patient::setInferredTests);
-        setPatientInferredObjectProperty(patientInd, properties.treatmentProperty, treatments, patient::getTreatments, patient::setInferredTreatments);
-        setPatientInferredObjectProperty(patientInd, properties.causeProperty, causes, patient::getCauses, patient::setInferredCauses);
-*/
+        integerProperties.forEach(propertyName ->
+                patient.setInferredIntegerProperties(
+                        propertyName,
+                        getPatientInferredIntegerProperty(patientInd, propertyName, patient.getIntegerProperties(propertyName))));
+        stringProperties.forEach(propertyName ->
+                patient.setInferredStringProperties(
+                        propertyName,
+                        getPatientInferredStringProperty(patientInd, propertyName, patient.getStringProperties(propertyName))));
+        entityProperties.forEach(propertyName ->
+                patient.setInferredEntityProperties(
+                        propertyName,
+                        getPatientInferredObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))));
 
         return patient;
     }
@@ -508,7 +510,7 @@ public class OntologyWrapper {
                 .collect(toSet());
     }
 
-    private Collection<Entity> getPatientObjectProperties(OWLIndividual patientInd, String propertyName, Map<String, Entity> entities) {
+    private Collection<Entity> getPatientObjectProperties(OWLIndividual patientInd, String propertyName) {
         OWLObjectProperty property = factory.getOWLObjectProperty(propertyName, prefixManager);
         return getObjectPropertyValues(patientInd, property, ontology)
                 .stream()
@@ -517,16 +519,35 @@ public class OntologyWrapper {
                 .collect(toSet());
     }
 
-    private void setPatientInferredObjectProperty(OWLNamedIndividual patientInd, OWLObjectProperty property,
-                                                  Map<String, Entity> entities, Supplier<Collection<Entity>> getter,
-                                                  Consumer<Collection<Entity>> setter) {
-        Set<Entity> inferredEntities = new HashSet<>();
-        for (OWLNamedIndividual entityInd : reasoner.getObjectPropertyValues(patientInd, property)
-                .getFlattened()) {
-            inferredEntities.add(entities.get(renderer.render(entityInd)));
-        }
-        inferredEntities.removeAll(getter.get());
-        setter.accept(inferredEntities);
+    private Collection<Integer> getPatientInferredIntegerProperty(OWLNamedIndividual patientInd, String propertyName, Collection<Integer> assertedValues) {
+        OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
+        Set<Integer> inferredEntities = reasoner.getDataPropertyValues(patientInd, property)
+                .stream()
+                .map(renderer::render)
+                .map(Integer::parseInt)
+                .collect(toSet());
+        inferredEntities.removeAll(assertedValues);
+        return inferredEntities;
+    }
+
+    private Collection<String> getPatientInferredStringProperty(OWLNamedIndividual patientInd, String propertyName, Collection<String> assertedValues) {
+        OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
+        Set<String> inferredEntities = reasoner.getDataPropertyValues(patientInd, property)
+                .stream()
+                .map(renderer::render)
+                .collect(toSet());
+        inferredEntities.removeAll(assertedValues);
+        return inferredEntities;
+    }
+
+    private Collection<Entity> getPatientInferredObjectProperty(OWLNamedIndividual patientInd, String propertyName, Collection<Entity> assertedValues) {
+        OWLObjectProperty property = factory.getOWLObjectProperty(propertyName, prefixManager);
+        Set<Entity> inferredEntities = reasoner.getObjectPropertyValues(patientInd, property).getFlattened()
+                .stream()
+                .map(v -> entities.get(renderer.render(v)))
+                .collect(toSet());
+        inferredEntities.removeAll(assertedValues);
+        return inferredEntities;
     }
 
     private void setPatientIndStringProperty(OWLIndividual patientInd, String propertyName, Collection<String> values) {
