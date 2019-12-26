@@ -1,16 +1,11 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static java.util.Collections.singleton;
+import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.FIRST_NAME_PROPERTY;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.LAST_NAME_PROPERTY;
 
@@ -21,7 +16,7 @@ import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.LAST_NAME_PROPE
  */
 public class Patient extends Entity implements Comparable<Patient> {
 
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG = getLogger(Patient.class);
 
     private final Map<String, Set<String>> stringProperties = new HashMap<>();
     private final Map<String, Set<Integer>> integerProperties = new HashMap<>();
@@ -52,8 +47,8 @@ public class Patient extends Entity implements Comparable<Patient> {
      */
     public Patient(String id, String firstName, String lastName) {
         super(id);
-        putStringProperty(FIRST_NAME_PROPERTY, firstName);
-        putStringProperty(LAST_NAME_PROPERTY, lastName);
+        setStringProperty(FIRST_NAME_PROPERTY, firstName);
+        setStringProperty(LAST_NAME_PROPERTY, lastName);
     }
 
     public float getEvaluation() {
@@ -69,7 +64,7 @@ public class Patient extends Entity implements Comparable<Patient> {
     }
 
     public void setFirstName(String firstName) {
-        putStringProperty(FIRST_NAME_PROPERTY, firstName);
+        setStringProperty(FIRST_NAME_PROPERTY, firstName);
     }
 
     public String getLastName() {
@@ -77,7 +72,7 @@ public class Patient extends Entity implements Comparable<Patient> {
     }
 
     public void setLastName(String lastName) {
-        putStringProperty(LAST_NAME_PROPERTY, lastName);
+        setStringProperty(LAST_NAME_PROPERTY, lastName);
     }
 
     /**
@@ -100,16 +95,28 @@ public class Patient extends Entity implements Comparable<Patient> {
         return getProperty(entityProperties, propertyName);
     }
 
-    public void putStringProperty(String propertyName, String value) {
-        putProperty(stringProperties, propertyName, value);
+    public void setStringProperty(String propertyName, String value) {
+        setProperty(stringProperties, propertyName, value);
     }
 
-    public void putIntegerProperty(String propertyName, Integer value) {
-        putProperty(integerProperties, propertyName, value);
+    public void setIntegerProperty(String propertyName, Integer value) {
+        setProperty(integerProperties, propertyName, value);
     }
 
-    public void putEntityProperty(String propertyName, Entity value) {
-        putProperty(entityProperties, propertyName, value);
+    public void setEntityProperty(String propertyName, Entity value) {
+        setProperty(entityProperties, propertyName, value);
+    }
+
+    public void setStringProperties(String propertyName, Collection<String> values) {
+        setProperties(stringProperties, propertyName, values);
+    }
+
+    public void setIntegerProperties(String propertyName, Collection<Integer> values) {
+        setProperties(integerProperties, propertyName, values);
+    }
+
+    public void setEntityProperties(String propertyName, Collection<Entity> values) {
+        setProperties(entityProperties, propertyName, values);
     }
 
     private <T> T getProperty(Map<String, Set<T>> propertyMap, String propertyName) {
@@ -120,14 +127,17 @@ public class Patient extends Entity implements Comparable<Patient> {
             return null;
     }
 
-    private <T> void putProperty(Map<String, Set<T>> propertyMap, String propertyName, T value) {
+    private <T> void setProperties(Map<String, Set<T>> propertyMap, String propertyName, Collection<T> values) {
         if (propertyMap.containsKey(propertyName))
-            propertyMap.get(propertyName).add(value);
+            propertyMap.get(propertyName).addAll(values);
         else {
-            HashSet<T> values = new HashSet<T>();
-            values.add(value);
-            propertyMap.put(propertyName, values);
+            HashSet<T> container = new HashSet<T>(values);
+            propertyMap.put(propertyName, container);
         }
+    }
+
+    private <T> void setProperty(Map<String, Set<T>> propertyMap, String propertyName, T value) {
+        setProperties(propertyMap, propertyName, singleton(value));
     }
 
     public Map<String, Set<String>> getStringProperties() {

@@ -25,7 +25,7 @@ public class Category {
 
     public void setPatientCategory(Patient patient) {
         //TODO support for integers etc.
-        patient.putEntityProperty(predicate, entity);
+        patient.setEntityProperty(predicate, entity);
     }
 
     public Entity getEntity() {

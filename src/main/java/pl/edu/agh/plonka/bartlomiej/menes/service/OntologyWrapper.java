@@ -12,7 +12,6 @@ import org.semanticweb.owlapi.reasoner.SimpleConfiguration;
 import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.OWLEntityRemover;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.swrlapi.core.SWRLAPIOWLOntology;
 import org.swrlapi.core.SWRLRuleEngine;
 import org.swrlapi.core.SWRLRuleRenderer;
@@ -35,15 +34,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.collect.BoundType.OPEN;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.semanticweb.owlapi.search.EntitySearcher.getDataPropertyValues;
+import static org.semanticweb.owlapi.search.EntitySearcher.getObjectPropertyValues;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class OntologyWrapper {
+
+    private static final Logger LOG = getLogger(OntologyWrapper.class);
 
     private static final Integer MIN_AGE = 0;
     private static final Integer MAX_AGE = 100;
     private static final Pattern diseasePattern = Pattern.compile("(?<diseaseID>\\w+)Disease(?<number>\\d+)");
     private static final Random random = new Random();
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
     private final OWLObjectRenderer renderer = new DLSyntaxObjectRenderer();
     private final EntitiesLoader entitiesLoader;
     private final RulesManager rulesManager;
@@ -58,6 +62,8 @@ public class OntologyWrapper {
     private final SWRLRuleRenderer ruleRenderer;
     private Map<String, Entity> classes = new HashMap<>();
     private OWLEntityRemover remover;
+    private Map<String, Entity> entities = new HashMap<>();
+    //TODO remove
     private Map<String, Entity> symptoms = new HashMap<>();
     private Map<String, Entity> diseases = new HashMap<>();
     private Map<String, Entity> tests = new HashMap<>();
@@ -65,8 +71,11 @@ public class OntologyWrapper {
     private Map<String, Entity> causes = new HashMap<>();
     private Collection<Rule> rules = new ArrayList<>();
     private OntologyProperties properties;
+    private Set<String> stringProperties;
+    private Set<String> integerProperties;
+    private Set<String> entityProperties;
 
-    public OntologyWrapper(String baseURL) throws OWLOntologyCreationException {
+    public OntologyWrapper(String baseURL, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
         factory = ontologyManager.getOWLDataFactory();
         ontology = ontologyManager.createOntology(IRI.create(baseURL));
@@ -82,9 +91,12 @@ public class OntologyWrapper {
         properties = new OntologyProperties(factory, prefixManager);
         entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner);
         rulesManager = new RulesManager(ruleOntology);
+        this.integerProperties = integerProperties;
+        this.stringProperties = stringProperties;
+        this.entityProperties = entityProperties;
     }
 
-    public OntologyWrapper(InputStream inputStream) throws OWLOntologyCreationException {
+    public OntologyWrapper(InputStream inputStream, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
         factory = ontologyManager.getOWLDataFactory();
         ontology = ontologyManager.loadOntologyFromOntologyDocument(inputStream);
@@ -101,10 +113,13 @@ public class OntologyWrapper {
         properties = new OntologyProperties(factory, prefixManager);
         entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner);
         rulesManager = new RulesManager(ruleOntology);
+        this.integerProperties = integerProperties;
+        this.stringProperties = stringProperties;
+        this.entityProperties = entityProperties;
         loadData();
     }
 
-    public OntologyWrapper(File file) throws OWLOntologyCreationException {
+    public OntologyWrapper(File file, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
         factory = ontologyManager.getOWLDataFactory();
         ontology = ontologyManager.loadOntologyFromOntologyDocument(file);
@@ -121,6 +136,9 @@ public class OntologyWrapper {
         properties = new OntologyProperties(factory, prefixManager);
         entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner);
         rulesManager = new RulesManager(ruleOntology);
+        this.integerProperties = integerProperties;
+        this.stringProperties = stringProperties;
+        this.entityProperties = entityProperties;
         loadData();
     }
 
@@ -161,20 +179,15 @@ public class OntologyWrapper {
     private Patient getPatient(OWLIndividual patientInd) {
         Patient patient = new Patient(renderer.render(patientInd));
 
-        //TODO
-//        setPatientStringProperty(patientInd, properties.firstNameProperty, patient::setFirstName);
-//        setPatientStringProperty(patientInd, properties.lastNameProperty, patient::setLastName);
-//        setPatientIntegerProperty(patientInd, properties.ageProperty, patient::setAge);
-//        setPatientIntegerProperty(patientInd, properties.heightProperty, patient::setHeight);
-//        setPatientIntegerProperty(patientInd, properties.weightProperty, patient::setWeight);
-//
-//        setPatientObjectProperty(patientInd, properties.symptomProperty, symptoms, patient::addSymptom);
-//        setPatientObjectProperty(patientInd, properties.diseaseProperty, diseases, patient::addDisease);
-//        setPatientObjectProperty(patientInd, properties.testProperty, tests, patient::addTest);
-//        setPatientObjectProperty(patientInd, properties.negativeTestProperty, tests, patient::addNegativeTest);
-//        setPatientObjectProperty(patientInd, properties.treatmentProperty, treatments, patient::addTreatment);
-//        setPatientObjectProperty(patientInd, properties.causeProperty, causes, patient::addCause);
-//        setPatientObjectProperty(patientInd, properties.previousOrCurrentDiseaseProperty, diseases, patient::addPreviousOrCurrentDisease);
+        this.stringProperties.forEach(propertyName -> {
+            patient.setStringProperties(propertyName, getPatientStringProperties(patientInd, propertyName));
+        });
+        this.integerProperties.forEach(propertyName -> {
+            patient.setIntegerProperties(propertyName, getPatientIntegerProperties(patientInd, propertyName));
+        });
+        this.entityProperties.forEach(propertyName -> {
+            patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName, entities));
+        });
 
         return patient;
     }
@@ -483,24 +496,30 @@ public class OntologyWrapper {
         return lowerBound + random.nextInt(upperBound - lowerBound + 1);
     }
 
-    private void setPatientStringProperty(OWLIndividual patientInd, OWLDataProperty property, Consumer<String> setter) {
-        Iterator<OWLLiteral> it = EntitySearcher.getDataPropertyValues(patientInd, property, ontology).iterator();
-        if (it.hasNext())
-            setter.accept(renderer.render(it.next()));
+    private Collection<String> getPatientStringProperties(OWLIndividual patientInd, String propertyName) {
+        OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
+        return getDataPropertyValues(patientInd, property, ontology)
+                .stream()
+                .map(renderer::render)
+                .collect(toSet());
     }
 
-    private void setPatientIntegerProperty(OWLIndividual patientInd, OWLDataProperty property, Consumer<Integer> setter) {
-        Iterator<OWLLiteral> it = EntitySearcher.getDataPropertyValues(patientInd, property, ontology).iterator();
-        if (it.hasNext())
-            setter.accept(Integer.parseInt(renderer.render(it.next())));
+    private Collection<Integer> getPatientIntegerProperties(OWLIndividual patientInd, String propertyName) {
+        OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
+        return getDataPropertyValues(patientInd, property, ontology)
+                .stream()
+                .map(renderer::render)
+                .map(Integer::parseInt)
+                .collect(toSet());
     }
 
-    private void setPatientObjectProperty(OWLIndividual patientInd, OWLObjectProperty property, Map<String, Entity> entities, Consumer<Entity> setter) {
-        for (OWLIndividual entityInd : EntitySearcher.getObjectPropertyValues(patientInd, property, ontology)) {
-            Entity entity = entities.get(renderer.render(entityInd));
-            if (entity != null)
-                setter.accept(entity);
-        }
+    private Collection<Entity> getPatientObjectProperties(OWLIndividual patientInd, String propertyName, Map<String, Entity> entities) {
+        OWLObjectProperty property = factory.getOWLObjectProperty(propertyName, prefixManager);
+        return getObjectPropertyValues(patientInd, property, ontology)
+                .stream()
+                .map(v -> entities.get(renderer.render(v)))
+                .filter(Objects::nonNull)
+                .collect(toSet());
     }
 
     private void setPatientInferredObjectProperty(OWLNamedIndividual patientInd, OWLObjectProperty property,

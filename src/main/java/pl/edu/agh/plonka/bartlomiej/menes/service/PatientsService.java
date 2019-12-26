@@ -5,7 +5,6 @@ import javafx.collections.ObservableList;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.RuleAlreadyExistsException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
@@ -19,32 +18,33 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
+import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.GENERATED_RULE_PREFIX;
 
 public class PatientsService {
 
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG = getLogger(PatientsService.class);
 
     private OntologyWrapper ontology;
     private ObservableList<Patient> patients = FXCollections.observableArrayList();
     private ObservableList<Rule> rules = FXCollections.observableArrayList();
 
-    public PatientsService(String url) throws OWLOntologyCreationException {
-        createKnowledgeBase(url);
+    public PatientsService(String url, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+        createKnowledgeBase(url, integerProperties, stringProperties, entityProperties);
     }
 
-    public PatientsService(File file) throws OWLOntologyCreationException {
-        createKnowledgeBase(file);
+    public PatientsService(File file, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+        createKnowledgeBase(file, integerProperties, stringProperties, entityProperties);
     }
 
-    public void createKnowledgeBase(String url) throws OWLOntologyCreationException {
-        ontology = new OntologyWrapper(url);
+    public void createKnowledgeBase(String url, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+        ontology = new OntologyWrapper(url, integerProperties, stringProperties, entityProperties);
         patients.clear();
         rules.clear();
     }
 
-    public void createKnowledgeBase(File file) throws OWLOntologyCreationException {
-        ontology = new OntologyWrapper(file);
+    public void createKnowledgeBase(File file, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+        ontology = new OntologyWrapper(file, integerProperties, stringProperties, entityProperties);
         patients.setAll(ontology.getPatients());
         rules.setAll(ontology.getRules());
     }
