@@ -1,42 +1,35 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model.rule;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.service.OntologyWrapper;
 
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toMap;
+import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.*;
 
 public class Complex implements Comparable<Complex> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Complex.class);
+    private static final Logger LOG = getLogger(Complex.class);
 
-    private EntitiesSelector<Entity> previousDiseasesSelector;
-    private EntitiesSelector<Entity> symptomSelector;
-    private EntitiesSelector<Entity> negativeTestsSelector;
-    private LinearSelector<Integer> ageSelector;
-    private LinearSelector<Integer> heightSelector;
-    private LinearSelector<Integer> weightSelector;
+    private Map<String, LinearSelector<Integer>> linearSelectors = new HashMap<>();
+    private Map<String, EntitiesSelector> entitySelectors = new HashMap<>();
 
     private Float evaluation;
 
     @SuppressWarnings("unchecked")
     public static Complex conjunction(Complex complex1, Complex complex2) {
         Complex resultComplex = new Complex();
-        resultComplex.previousDiseasesSelector = (EntitiesSelector<Entity>) setSelector(
-                complex1.previousDiseasesSelector, complex2.previousDiseasesSelector);
-        resultComplex.symptomSelector = (EntitiesSelector<Entity>) setSelector(complex1.symptomSelector,
-                complex2.symptomSelector);
-        resultComplex.negativeTestsSelector = (EntitiesSelector<Entity>) setSelector(complex1.negativeTestsSelector,
-                complex2.negativeTestsSelector);
-        resultComplex.ageSelector = (LinearSelector<Integer>) setSelector(complex1.ageSelector, complex2.ageSelector);
-        resultComplex.heightSelector = (LinearSelector<Integer>) setSelector(complex1.heightSelector, complex2.heightSelector);
-        resultComplex.weightSelector = (LinearSelector<Integer>) setSelector(complex1.weightSelector, complex2.weightSelector);
+
+        resultComplex.entitySelectors = mergeMaps(complex1.entitySelectors, complex2.entitySelectors, (s1, s2) -> (EntitiesSelector) setSelector(s1, s2));
+        resultComplex.linearSelectors = mergeMaps(complex1.linearSelectors, complex2.linearSelectors, (s1, s2) -> (LinearSelector<Integer>) setSelector(s1, s2));
 
         return resultComplex;
     }
@@ -119,54 +112,6 @@ public class Complex implements Comparable<Complex> {
         return atoms;
     }
 
-    public EntitiesSelector<Entity> getPreviousDiseasesSelector() {
-        return previousDiseasesSelector;
-    }
-
-    public void setPreviousDiseasesSelector(EntitiesSelector<Entity> previousDiseasesSelector) {
-        this.previousDiseasesSelector = previousDiseasesSelector;
-    }
-
-    public EntitiesSelector<Entity> getSymptomSelector() {
-        return symptomSelector;
-    }
-
-    public void setSymptomSelector(EntitiesSelector<Entity> symptomSelector) {
-        this.symptomSelector = symptomSelector;
-    }
-
-    public LinearSelector<Integer> getAgeSelector() {
-        return ageSelector;
-    }
-
-    public void setAgeSelector(LinearSelector<Integer> ageSelector) {
-        this.ageSelector = ageSelector;
-    }
-
-    public EntitiesSelector<Entity> getNegativeTestsSelector() {
-        return negativeTestsSelector;
-    }
-
-    public void setNegativeTestsSelector(EntitiesSelector<Entity> negativeTestsSelector) {
-        this.negativeTestsSelector = negativeTestsSelector;
-    }
-
-    public LinearSelector<Integer> getHeightSelector() {
-        return heightSelector;
-    }
-
-    public void setHeightSelector(LinearSelector<Integer> heightSelector) {
-        this.heightSelector = heightSelector;
-    }
-
-    public LinearSelector<Integer> getWeightSelector() {
-        return weightSelector;
-    }
-
-    public void setWeightSelector(LinearSelector<Integer> weightSelector) {
-        this.weightSelector = weightSelector;
-    }
-
     public Float getEvaluation() {
         return evaluation;
     }
@@ -176,18 +121,14 @@ public class Complex implements Comparable<Complex> {
     }
 
     public boolean contains(Complex complex) {
-        if (!contains(symptomSelector, complex.symptomSelector))
-            return false;
-        if (!contains(negativeTestsSelector, complex.negativeTestsSelector))
-            return false;
-        if (!contains(previousDiseasesSelector, complex.previousDiseasesSelector))
-            return false;
-        if (!contains(ageSelector, complex.ageSelector))
-            return false;
-        if (!contains(heightSelector, complex.heightSelector))
-            return false;
-        if (!contains(weightSelector, complex.weightSelector))
-            return false;
+        for (Map.Entry<String, EntitiesSelector> entry : entitySelectors.entrySet()) {
+            if (!complex.entitySelectors.containsKey(entry.getKey()) || !contains(entry.getValue(), complex.entitySelectors.get(entry.getKey())))
+                return false;
+        }
+        for (Map.Entry<String, LinearSelector<Integer>> entry : linearSelectors.entrySet()) {
+            if (!complex.linearSelectors.containsKey(entry.getKey()) || !contains(entry.getValue(), complex.linearSelectors.get(entry.getKey())))
+                return false;
+        }
         return true;
     }
 
@@ -239,12 +180,13 @@ public class Complex implements Comparable<Complex> {
 
         rule.addDeclarationAtom(new ClassDeclarationAtom<>(ontology.getClasses().get(PATIENT_CLASS), patientVariable));
 
-        rule.addBodyAtoms(createLinearAtoms(ageVariable, patientVariable, AGE_PROPERTY, ageSelector));
-        rule.addBodyAtoms(createLinearAtoms(heightVariable, patientVariable, HEIGHT_PROPERTY, heightSelector));
-        rule.addBodyAtoms(createLinearAtoms(weightVariable, patientVariable, WEIGHT_PROPERTY, weightSelector));
-        rule.addBodyAtoms(createEntityAtoms(patientVariable, HAS_SYMPTOM_PROPERTY, symptomSelector));
-        rule.addBodyAtoms(createEntityAtoms(patientVariable, PREVIOUS_DISEASE_PROPERTY, previousDiseasesSelector));
-        rule.addBodyAtoms(createEntityAtoms(patientVariable, NEGATIVE_TEST_PROPERTY, negativeTestsSelector));
+        //TODO
+//        rule.addBodyAtoms(createLinearAtoms(ageVariable, patientVariable, AGE_PROPERTY, ageSelector));
+//        rule.addBodyAtoms(createLinearAtoms(heightVariable, patientVariable, HEIGHT_PROPERTY, heightSelector));
+//        rule.addBodyAtoms(createLinearAtoms(weightVariable, patientVariable, WEIGHT_PROPERTY, weightSelector));
+//        rule.addBodyAtoms(createEntityAtoms(patientVariable, HAS_SYMPTOM_PROPERTY, symptomSelector));
+//        rule.addBodyAtoms(createEntityAtoms(patientVariable, PREVIOUS_DISEASE_PROPERTY, previousDiseasesSelector));
+//        rule.addBodyAtoms(createEntityAtoms(patientVariable, NEGATIVE_TEST_PROPERTY, negativeTestsSelector));
 
         rule.addHeadAtoms(createEntityAtoms(patientVariable, category.getPredicate(), singleton(category.getEntity())));
 
@@ -254,18 +196,19 @@ public class Complex implements Comparable<Complex> {
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        str.append("Symptoms: \n\t");
-        str.append(symptomSelector);
-        str.append("\nPrevious or current diseases: \n\t");
-        str.append(previousDiseasesSelector);
-        str.append("\nNegative tests: \n\t");
-        str.append(negativeTestsSelector);
-        str.append("\nAge: ");
-        str.append(ageSelector);
-        str.append("\nHeight: ");
-        str.append(heightSelector);
-        str.append("\nWeight: ");
-        str.append(weightSelector);
+        //TODO
+//        str.append("Symptoms: \n\t");
+//        str.append(symptomSelector);
+//        str.append("\nPrevious or current diseases: \n\t");
+//        str.append(previousDiseasesSelector);
+//        str.append("\nNegative tests: \n\t");
+//        str.append(negativeTestsSelector);
+//        str.append("\nAge: ");
+//        str.append(ageSelector);
+//        str.append("\nHeight: ");
+//        str.append(heightSelector);
+//        str.append("\nWeight: ");
+//        str.append(weightSelector);
         return str.toString();
     }
 
@@ -275,4 +218,14 @@ public class Complex implements Comparable<Complex> {
         return 0;
     }
 
+
+    private static <T, U> Map<T, U> mergeMaps(Map<T, U> map1, Map<T, U> map2, BinaryOperator<U> conflictResolver) {
+        return Stream.of(map1, map2)
+                .flatMap(map -> map.entrySet().stream())
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        conflictResolver
+                ));
+    }
 }

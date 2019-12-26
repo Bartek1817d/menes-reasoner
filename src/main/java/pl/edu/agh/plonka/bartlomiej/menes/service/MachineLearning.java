@@ -187,7 +187,7 @@ public class MachineLearning {
     }
 
     private Collection<Complex> createComplexes(Collection<Entity> positiveEntities, Collection<Entity> negativeEntities,
-                                                BiConsumer<Complex, EntitiesSelector<Entity>> complexSetter) {
+                                                BiConsumer<Complex, EntitiesSelector> complexSetter) {
         ArrayList<Complex> complexes = new ArrayList<>();
         if (!positiveEntities.isEmpty()) {
             for (Entity entity : positiveEntities) {
@@ -200,8 +200,8 @@ public class MachineLearning {
         return complexes;
     }
 
-    private Complex createComplex(Entity entity, BiConsumer<Complex, EntitiesSelector<Entity>> complexSetter) {
-        EntitiesSelector<Entity> selector = new EntitiesSelector<>();
+    private Complex createComplex(Entity entity, BiConsumer<Complex, EntitiesSelector> complexSetter) {
+        EntitiesSelector selector = new EntitiesSelector();
         selector.add(entity);
         Complex complex = new Complex();
         complexSetter.accept(complex, selector);

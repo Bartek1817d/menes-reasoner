@@ -1,22 +1,24 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model.rule;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Collection;
 import java.util.HashSet;
 
-public class EntitiesSelector<T> extends HashSet<T> implements Selector<T> {
+import static org.slf4j.LoggerFactory.getLogger;
 
+public class EntitiesSelector extends HashSet<Entity> implements Selector<Entity> {
+
+    private static final Logger LOG = getLogger(EntitiesSelector.class);
     private static final long serialVersionUID = 640758287916192919L;
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
 
     public EntitiesSelector() {
         super();
     }
 
-    public EntitiesSelector(Collection<T> collection) {
+    public EntitiesSelector(Collection<Entity> collection) {
         super(collection);
     }
 
@@ -24,8 +26,8 @@ public class EntitiesSelector<T> extends HashSet<T> implements Selector<T> {
     public Selector conjunction(Selector selector) {
         if (!(selector instanceof EntitiesSelector))
             return null;
-        EntitiesSelector<T> resultSelector = new EntitiesSelector<>(this);
-        resultSelector.addAll((EntitiesSelector<T>) selector);
+        EntitiesSelector resultSelector = new EntitiesSelector(this);
+        resultSelector.addAll((EntitiesSelector) selector);
         return resultSelector;
     }
 
@@ -34,14 +36,14 @@ public class EntitiesSelector<T> extends HashSet<T> implements Selector<T> {
         if (selector == null)
             return false;
         if (selector instanceof EntitiesSelector) {
-            EntitiesSelector<?> nominalSelector = (EntitiesSelector) selector;
+            EntitiesSelector nominalSelector = (EntitiesSelector) selector;
             return containsAll(nominalSelector);
         }
         return false;
     }
 
     @Override
-    public boolean covers(Collection<T> entities) {
+    public boolean covers(Collection<Entity> entities) {
         if (isEmpty())
             return true;
         if (entities == null || entities.isEmpty())
@@ -50,7 +52,7 @@ public class EntitiesSelector<T> extends HashSet<T> implements Selector<T> {
     }
 
     @Override
-    public boolean covers(T entity) {
+    public boolean covers(Entity entity) {
         throw new NotImplementedException();
     }
 }
