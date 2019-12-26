@@ -6,6 +6,7 @@ import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.service.OntologyWrapper;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 
@@ -201,19 +202,14 @@ public class Complex implements Comparable<Complex> {
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        //TODO
-//        str.append("Symptoms: \n\t");
-//        str.append(symptomSelector);
-//        str.append("\nPrevious or current diseases: \n\t");
-//        str.append(previousDiseasesSelector);
-//        str.append("\nNegative tests: \n\t");
-//        str.append(negativeTestsSelector);
-//        str.append("\nAge: ");
-//        str.append(ageSelector);
-//        str.append("\nHeight: ");
-//        str.append(heightSelector);
-//        str.append("\nWeight: ");
-//        str.append(weightSelector);
+        BiConsumer<String, Object> format = (property, selector) -> {
+            str.append(property);
+            str.append(": \n\t");
+            str.append(selector);
+        };
+        entitySelectors.forEach(format);
+        linearSelectors.forEach(format);
+
         return str.toString();
     }
 
