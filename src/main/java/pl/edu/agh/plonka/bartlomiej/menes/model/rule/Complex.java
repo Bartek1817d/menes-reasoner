@@ -7,10 +7,10 @@ import pl.edu.agh.plonka.bartlomiej.menes.service.OntologyWrapper;
 
 import java.util.*;
 import java.util.function.BinaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.*;
@@ -53,11 +53,23 @@ public class Complex implements Comparable<Complex> {
         return resultComplexes;
     }
 
+    private Collection<AbstractAtom> createEntityAtoms(Variable patientVariable) {
+        return entitySelectors.entrySet()
+                .stream()
+                .map(entry -> createEntityAtoms(
+                        new Variable('_' + entry.getKey()),
+                        entry.getKey(),
+                        entry.getValue()
+                ))
+                .flatMap(Collection::stream)
+                .collect(toList());
+    }
+
     private static Collection<AbstractAtom> createEntityAtoms(Variable variable, String predicate, Collection<Entity> entities) {
         if (entities == null)
             return Collections.emptyList();
         else
-            return entities.stream().map(e -> new TwoArgumentsAtom<>(predicate, variable, e)).collect(Collectors.toList());
+            return entities.stream().map(e -> new TwoArgumentsAtom<>(predicate, variable, e)).collect(toList());
     }
 
     private static Collection<AbstractAtom> createLinearAtoms(Variable linearVariable, Variable patientVariable, String propertyName,
@@ -70,6 +82,18 @@ public class Complex implements Comparable<Complex> {
         atoms.addAll(createLinearAtoms(linearVariable, linearSelector));
 
         return atoms;
+    }
+
+    private Collection<AbstractAtom> createLinearAtoms(Variable patientVariable) {
+        return linearSelectors.entrySet()
+                .stream()
+                .map(entry -> createLinearAtoms(
+                        new Variable('_' + entry.getKey()),
+                        patientVariable,
+                        entry.getKey(),
+                        entry.getValue()))
+                .flatMap(Collection::stream)
+                .collect(toList());
     }
 
     private static Collection<AbstractAtom> createLinearAtoms(Variable linearVariable, LinearSelector<Integer> linearSelector) {
@@ -163,19 +187,11 @@ public class Complex implements Comparable<Complex> {
     public Rule generateRule(String ruleName, Category category, OntologyWrapper ontology) {
         Rule rule = new Rule(ruleName);
         Variable patientVariable = new Variable("patient", ontology.getClasses().get(PATIENT_CLASS));
-        Variable ageVariable = new Variable("_age");
-        Variable heightVariable = new Variable("_height");
-        Variable weightVariable = new Variable("_weight");
 
         rule.addDeclarationAtom(new ClassDeclarationAtom<>(ontology.getClasses().get(PATIENT_CLASS), patientVariable));
 
-        //TODO
-//        rule.addBodyAtoms(createLinearAtoms(ageVariable, patientVariable, AGE_PROPERTY, ageSelector));
-//        rule.addBodyAtoms(createLinearAtoms(heightVariable, patientVariable, HEIGHT_PROPERTY, heightSelector));
-//        rule.addBodyAtoms(createLinearAtoms(weightVariable, patientVariable, WEIGHT_PROPERTY, weightSelector));
-//        rule.addBodyAtoms(createEntityAtoms(patientVariable, HAS_SYMPTOM_PROPERTY, symptomSelector));
-//        rule.addBodyAtoms(createEntityAtoms(patientVariable, PREVIOUS_DISEASE_PROPERTY, previousDiseasesSelector));
-//        rule.addBodyAtoms(createEntityAtoms(patientVariable, NEGATIVE_TEST_PROPERTY, negativeTestsSelector));
+        rule.addHeadAtoms(createLinearAtoms(patientVariable));
+        rule.addHeadAtoms(createEntityAtoms(patientVariable));
 
         rule.addHeadAtoms(createEntityAtoms(patientVariable, category.getPredicate(), singleton(category.getEntity())));
 
