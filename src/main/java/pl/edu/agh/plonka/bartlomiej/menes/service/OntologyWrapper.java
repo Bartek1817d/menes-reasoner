@@ -246,17 +246,6 @@ public class OntologyWrapper {
         rulesManager.deleteRules(rules);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public Collection<Patient> generatePatientsFromRules() {
-        Collection<Patient> patients = new ArrayList<>();
-        for (Rule rule : rules) {
-            Patient patient = generatePatientFromRule(rule);
-            if (patient != null)
-                patients.add(patient);
-        }
-        return patients;
-    }
-
     public void changeLanguage() {
         classes.values().forEach(Entity::setLanguage);
         entities.values().forEach(Entity::setLanguage);
@@ -280,21 +269,6 @@ public class OntologyWrapper {
                         getPatientInferredObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))));
 
         return patient;
-    }
-
-    private Patient generatePatientFromRule(Rule rule) {
-        Matcher diseaseMatcher = diseasePattern.matcher(rule.getName());
-        if (diseaseMatcher.find()) {
-            // System.out.println(rule);
-            String diseaseID = diseaseMatcher.group("diseaseID");
-            String number = diseaseMatcher.group("number");
-            Map<String, Entity> variables = new HashMap<>();
-            Patient patient = parseVariables(rule, diseaseID, number, variables);
-            parseRuleBodyAtoms(rule, variables);
-            parseRuleHeadAtoms(rule, variables);
-            return patient;
-        } else
-            return null;
     }
 
     private Patient parseVariables(Rule rule, String diseaseID, String number, Map<String, Entity> variables) {
@@ -349,21 +323,6 @@ public class OntologyWrapper {
                         setPatientAge(rule, twoArgumentsAtom, variables);
                         break;
                     }
-                }
-            }
-        }
-    }
-
-    private void parseRuleHeadAtoms(Rule rule, Map<String, Entity> variables) {
-        for (AbstractAtom atom : rule.getHeadAtoms()) {
-            if (atom instanceof TwoArgumentsAtom) {
-                TwoArgumentsAtom twoArgumentsAtom = (TwoArgumentsAtom) atom;
-                String predicate = twoArgumentsAtom.getPredicate();
-                if (predicate.equals("hasDisease")) {
-                    String pName = ((Variable) twoArgumentsAtom.getArgument1()).getName();
-                    Patient p = (Patient) variables.get(pName);
-                    //TODO
-//                    p.addDisease((Entity) twoArgumentsAtom.getArgument2());
                 }
             }
         }
