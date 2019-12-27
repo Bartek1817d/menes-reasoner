@@ -40,24 +40,19 @@ public class RulesManager {
         rules.forEach(rule -> ruleOntology.deleteSWRLRule(rule.getName()));
     }
 
-    Collection<Rule> loadRules(Map<String, Entity> classes,
-                               Map<String, Entity> symptoms,
-                               Map<String, Entity> diseases,
-                               Map<String, Entity> tests,
-                               Map<String, Entity> treatments,
-                               Map<String, Entity> causes) {
+    public Collection<Rule> loadRules(Map<String, Entity> classes, Map<String, Entity> entities) {
         Collection<Rule> rules = new ArrayList<>();
         for (SWRLAPIRule swrlRule : ruleOntology.getSWRLRules()) {
             Rule rule = new Rule(swrlRule.getRuleName());
             for (SWRLAtom atom : swrlRule.getBody()) {
-                AbstractAtom bodyAtom = parseSWRLAtom(atom, classes, symptoms, diseases, tests, treatments, causes);
+                AbstractAtom bodyAtom = parseSWRLAtom(atom, classes, entities);
                 if (isDeclarationAtom(bodyAtom))
                     rule.addDeclarationAtom(bodyAtom);
                 else
                     rule.addBodyAtom(bodyAtom);
             }
             for (SWRLAtom atom : swrlRule.getHead()) {
-                rule.addHeadAtom(parseSWRLAtom(atom, classes, symptoms, diseases, tests, treatments, causes));
+                rule.addHeadAtom(parseSWRLAtom(atom, classes, entities));
             }
             rules.add(rule);
         }
@@ -65,13 +60,7 @@ public class RulesManager {
     }
 
     @SuppressWarnings("unchecked")
-    private AbstractAtom parseSWRLAtom(SWRLAtom swrlAtom,
-                                       Map<String, Entity> classes,
-                                       Map<String, Entity> symptoms,
-                                       Map<String, Entity> diseases,
-                                       Map<String, Entity> tests,
-                                       Map<String, Entity> treatments,
-                                       Map<String, Entity> causes) {
+    private AbstractAtom parseSWRLAtom(SWRLAtom swrlAtom, Map<String, Entity> classes, Map<String, Entity> entities) {
         String str = swrlAtom.toString();
         Pattern atomPattern = Pattern
                 .compile("^(?<atomType>\\p{Alpha}+)\\(<\\S+#(?<atomID>\\w+)> (?<atomArguments>.+)\\)$");
@@ -87,10 +76,10 @@ public class RulesManager {
 
             // class declaration
             if (atomType.equals("ClassAtom")) {
-                return parseClassAtom(atomID, argumentMatcher, classes, symptoms, diseases, tests, treatments, causes);
+                return parseClassAtom(atomID, argumentMatcher, classes, entities);
             } else if (atomType.equals("ObjectPropertyAtom") || atomType.equals("DataPropertyAtom")
                     || atomType.equals("BuiltInAtom")) { // property
-                return parseTwoArgumentsAtom(atomType, atomID, argumentMatcher, symptoms, diseases, tests, treatments, causes);
+                return parseTwoArgumentsAtom(atomType, atomID, argumentMatcher, entities);
             }
         }
         return null;
@@ -99,26 +88,14 @@ public class RulesManager {
     private AbstractAtom parseClassAtom(String atomID,
                                         Matcher argumentMatcher,
                                         Map<String, Entity> classes,
-                                        Map<String, Entity> symptoms,
-                                        Map<String, Entity> diseases,
-                                        Map<String, Entity> tests,
-                                        Map<String, Entity> treatments,
-                                        Map<String, Entity> causes) {
+                                        Map<String, Entity> entities) {
         if (argumentMatcher.find()) {
             String argumentType = argumentMatcher.group("argumentType");
             String argumentID = argumentMatcher.group("argumentID");
             if (argumentType.equals("Variable"))
                 return new ClassDeclarationAtom<>(classes.get(atomID), new Variable(argumentID));
-            if (symptoms.containsKey(argumentID))
-                return new ClassDeclarationAtom<>(classes.get(atomID), symptoms.get(argumentID));
-            if (diseases.containsKey(argumentID))
-                return new ClassDeclarationAtom<>(classes.get(atomID), diseases.get(argumentID));
-            if (tests.containsKey(argumentID))
-                return new ClassDeclarationAtom<>(classes.get(atomID), tests.get(argumentID));
-            if (treatments.containsKey(argumentID))
-                return new ClassDeclarationAtom<>(classes.get(atomID), treatments.get(argumentID));
-            if (causes.containsKey(argumentID))
-                return new ClassDeclarationAtom<>(classes.get(atomID), causes.get(argumentID));
+            if (entities.containsKey(argumentID))
+                return new ClassDeclarationAtom<>(classes.get(atomID), entities.get(argumentID));
         }
         return null;
     }
@@ -126,11 +103,7 @@ public class RulesManager {
     private AbstractAtom parseTwoArgumentsAtom(String atomType,
                                                String atomID,
                                                Matcher argumentMatcher,
-                                               Map<String, Entity> symptoms,
-                                               Map<String, Entity> diseases,
-                                               Map<String, Entity> tests,
-                                               Map<String, Entity> treatments,
-                                               Map<String, Entity> causes) {
+                                               Map<String, Entity> entities) {
         int i = 0;
         @SuppressWarnings("rawtypes")
         TwoArgumentsAtom atom;
@@ -149,7 +122,7 @@ public class RulesManager {
                 if (argumentType.equals("Variable")) {
                     setAtomArgument(atom, new Variable(argumentID), i);
                 } else if (argumentType.equals("")) {
-                    Entity entity = getEntityFromArgumentId(argumentID, symptoms, diseases, tests, treatments, causes);
+                    Entity entity = entities.get(argumentID);
                     setAtomArgument(atom, entity, i);
                 }
             } else if (valueType != null && value != null && StringUtils.isNumeric(value)) {
@@ -170,26 +143,6 @@ public class RulesManager {
             case 2:
                 atom.setArgument2(argument);
         }
-    }
-
-    private Entity getEntityFromArgumentId(String argumentID,
-                                           Map<String, Entity> symptoms,
-                                           Map<String, Entity> diseases,
-                                           Map<String, Entity> tests,
-                                           Map<String, Entity> treatments,
-                                           Map<String, Entity> causes) {
-        if (symptoms.containsKey(argumentID))
-            return symptoms.get(argumentID);
-        else if (diseases.containsKey(argumentID))
-            return diseases.get(argumentID);
-        else if (tests.containsKey(argumentID))
-            return tests.get(argumentID);
-        else if (treatments.containsKey(argumentID))
-            return treatments.get(argumentID);
-        else if (causes.containsKey(argumentID))
-            return causes.get(argumentID);
-        else
-            return null;
     }
 
     private boolean isDeclarationAtom(AbstractAtom atom) {

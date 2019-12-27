@@ -61,12 +61,6 @@ public class OntologyWrapper {
     private Map<String, Entity> classes = new HashMap<>();
     private OWLEntityRemover remover;
     private Map<String, Entity> entities = new HashMap<>();
-    //TODO remove
-    private Map<String, Entity> symptoms = new HashMap<>();
-    private Map<String, Entity> diseases = new HashMap<>();
-    private Map<String, Entity> tests = new HashMap<>();
-    private Map<String, Entity> treatments = new HashMap<>();
-    private Map<String, Entity> causes = new HashMap<>();
     private Collection<Rule> rules = new ArrayList<>();
     private OntologyProperties properties;
     private Set<String> stringProperties;
@@ -142,36 +136,11 @@ public class OntologyWrapper {
 
     private void loadData() {
         classes = entitiesLoader.loadClasses();
-        symptoms = entitiesLoader.loadInstances(properties.symptomClass, classes);
-        diseases = entitiesLoader.loadInstances(properties.diseaseClass, classes);
-        tests = entitiesLoader.loadInstances(properties.testingClass, classes);
-        treatments = entitiesLoader.loadInstances(properties.treatmentClass, classes);
-        causes = entitiesLoader.loadInstances(properties.causeClass, classes);
-        rules = rulesManager.loadRules(classes, symptoms, diseases, tests, treatments, causes);
+        rules = rulesManager.loadRules(classes, entities);
     }
 
     public Map<String, Entity> getClasses() {
         return classes;
-    }
-
-    public Map<String, Entity> getSymptoms() {
-        return symptoms;
-    }
-
-    public Map<String, Entity> getDiseases() {
-        return diseases;
-    }
-
-    public Map<String, Entity> getTests() {
-        return tests;
-    }
-
-    public Map<String, Entity> getTreatments() {
-        return treatments;
-    }
-
-    public Map<String, Entity> getCauses() {
-        return causes;
     }
 
     private Patient getPatient(OWLIndividual patientInd) {
@@ -289,11 +258,7 @@ public class OntologyWrapper {
 
     public void changeLanguage() {
         classes.values().forEach(Entity::setLanguage);
-        symptoms.values().forEach(Entity::setLanguage);
-        diseases.values().forEach(Entity::setLanguage);
-        tests.values().forEach(Entity::setLanguage);
-        treatments.values().forEach(Entity::setLanguage);
-        causes.values().forEach(Entity::setLanguage);
+        entities.values().forEach(Entity::setLanguage);
     }
 
     public Patient getInferredPatient(Patient patient) {
