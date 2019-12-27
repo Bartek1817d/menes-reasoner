@@ -20,7 +20,10 @@ import org.swrlapi.factory.SWRLAPIFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
-import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.AbstractAtom;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.TwoArgumentsAtom;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Variable;
 import pl.edu.agh.plonka.bartlomiej.menes.utils.NameUtils;
 import uk.ac.manchester.cs.owl.owlapi.OWLLiteralImplPlain;
 
@@ -29,9 +32,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.regex.Pattern;
 
-import static com.google.common.collect.BoundType.OPEN;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 import static org.semanticweb.owlapi.search.EntitySearcher.getDataPropertyValues;
 import static org.semanticweb.owlapi.search.EntitySearcher.getObjectPropertyValues;
@@ -137,6 +139,16 @@ public class OntologyWrapper {
 
     public Map<String, Entity> getClasses() {
         return classes;
+    }
+
+    public Collection<Entity> getClassInstances(String className) {
+        Entity cls = classes.get(className);
+        if (cls == null)
+            return emptyList();
+        return entities.values()
+                .stream()
+                .filter(e -> e.getClasses().contains(cls))
+                .collect(toSet());
     }
 
     private Patient getPatient(OWLIndividual patientInd) {
