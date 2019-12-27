@@ -12,6 +12,7 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.ComplexComparator.sortStar;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.GENERATED_RULE_PREFIX;
@@ -28,9 +29,9 @@ public class MachineLearning {
         this.ontology = ontology;
     }
 
-    public Collection<Rule> sequentialCovering(Set<Patient> trainingSet) throws Throwable {
+    public Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Map<String, Collection<Entity>> categories) throws Throwable {
         ExecutorService service = Executors.newCachedThreadPool();
-        Collection<Callable<Collection<Rule>>> callables = prepareCallables(trainingSet);
+        Collection<Callable<Collection<Rule>>> callables = prepareCallables(trainingSet, categories);
         List<Future<Collection<Rule>>> futures = service.invokeAll(callables);
         return collectResults(futures);
     }
@@ -47,13 +48,12 @@ public class MachineLearning {
         return simplifyRules(rules);
     }
 
-    private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet) {
-        Collection<Callable<Collection<Rule>>> callables = new ArrayList<>();
-//        callables.addAll(prepareCallable(trainingSet, ontology.getDiseases().values(), HAS_DISEASE));
-//        callables.addAll(prepareCallable(trainingSet, ontology.getTests().values(), SHOULD_MAKE_TEST));
-//        callables.addAll(prepareCallable(trainingSet, ontology.getTreatments().values(), SHOULD_BE_TREATED_WITH));
-//        callables.addAll(prepareCallable(trainingSet, ontology.getCauses().values(), CAUSE_OF_DISEASE));
-        return callables;
+    private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet, Map<String, Collection<Entity>> categories) {
+        return categories.entrySet()
+                .stream()
+                .map(entry -> prepareCallable(trainingSet, entry.getValue(), entry.getKey()))
+                .flatMap(Collection::stream)
+                .collect(toList());
     }
 
     private Collection<Callable<Collection<Rule>>> prepareCallable(Set<Patient> trainingSet,
