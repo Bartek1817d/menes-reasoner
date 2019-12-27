@@ -136,6 +136,7 @@ public class OntologyWrapper {
 
     private void loadData() {
         classes = entitiesLoader.loadClasses();
+        entities = entitiesLoader.loadInstances(classes);
         rules = rulesManager.loadRules(classes, entities);
     }
 

@@ -38,9 +38,9 @@ class EntitiesLoader {
         return classes;
     }
 
-    Map<String, Entity> loadInstances(OWLClass owlClass, Map<String, Entity> classes) {
+    Map<String, Entity> loadInstances(Map<String, Entity> classes) {
         Map<String, Entity> instances = new HashMap<>();
-        for (OWLNamedIndividual owlInstance : reasoner.getInstances(owlClass, false).getFlattened()) {
+        for (OWLNamedIndividual owlInstance : ontology.getIndividualsInSignature()) {
             loadInstance(owlInstance, instances, classes);
         }
         return instances;
