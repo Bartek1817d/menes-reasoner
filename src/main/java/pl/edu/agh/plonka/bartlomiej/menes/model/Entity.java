@@ -1,7 +1,6 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,10 +8,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class Entity {
 
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private final Logger LOG = getLogger(Entity.class);
 
     private String id;
     private String label;

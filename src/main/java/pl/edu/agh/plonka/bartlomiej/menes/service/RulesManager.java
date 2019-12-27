@@ -2,6 +2,7 @@ package pl.edu.agh.plonka.bartlomiej.menes.service;
 
 import org.apache.commons.lang3.StringUtils;
 import org.semanticweb.owlapi.model.SWRLAtom;
+import org.slf4j.Logger;
 import org.swrlapi.core.SWRLAPIOWLOntology;
 import org.swrlapi.core.SWRLAPIRule;
 import org.swrlapi.exceptions.SWRLBuiltInException;
@@ -16,7 +17,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 public class RulesManager {
+
+    private static final Logger LOG = getLogger(RulesManager.class);
 
     private final SWRLAPIOWLOntology ruleOntology;
 

@@ -2,7 +2,6 @@ package pl.edu.agh.plonka.bartlomiej.menes.service;
 
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.PartialStarCreationException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
@@ -13,14 +12,16 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 import static java.lang.String.format;
+import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.ComplexComparator.sortStar;
-import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.*;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.GENERATED_RULE_PREFIX;
 
 public class MachineLearning {
 
+    private static final Logger LOG = getLogger(MachineLearning.class);
+
     // 0 for restrictive, 1 for general
     private static final float epsilon = 0.5f;
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
     private OntologyWrapper ontology;
 
     public MachineLearning(OntologyWrapper ontology) {

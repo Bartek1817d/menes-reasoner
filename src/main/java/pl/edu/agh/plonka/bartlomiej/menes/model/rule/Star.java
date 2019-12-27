@@ -1,15 +1,16 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model.rule;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 public class Star extends ArrayList<Complex> {
 
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private static final Logger LOG = getLogger(Star.class);
 
     public Star() {
         add(new Complex());

@@ -1,11 +1,12 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model.rule;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 public abstract class AbstractAtom {
 
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private final Logger LOG = getLogger(AbstractAtom.class);
 
     protected String prefix = "base";
     protected String predicate;
