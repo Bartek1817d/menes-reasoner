@@ -41,10 +41,6 @@ public class OntologyWrapper {
 
     private static final Logger LOG = getLogger(OntologyWrapper.class);
 
-    private static final Integer MIN_AGE = 0;
-    private static final Integer MAX_AGE = 100;
-    private static final Pattern diseasePattern = Pattern.compile("(?<diseaseID>\\w+)Disease(?<number>\\d+)");
-    private static final Random random = new Random();
     private final OWLObjectRenderer renderer = new DLSyntaxObjectRenderer();
     private final EntitiesLoader entitiesLoader;
     private final RulesManager rulesManager;
@@ -270,71 +266,6 @@ public class OntologyWrapper {
         return patient;
     }
 
-    private Patient parseVariables(Rule rule, String diseaseID, String number, Map<String, Entity> variables) {
-        Patient patient = null;
-        for (AbstractAtom atom : rule.getDeclarationAtoms()) {
-            if (atom instanceof ClassDeclarationAtom
-                    && ((ClassDeclarationAtom) atom).getArgument() instanceof Variable) {
-                Variable var = (Variable) (((ClassDeclarationAtom) atom).getArgument());
-                if (((ClassDeclarationAtom) atom).getClassEntity().equals(classes.get("Patient"))) {
-                    patient = new Patient(diseaseID + number, diseaseID, number);
-                    variables.put(var.getName(), patient);
-                } else
-                    variables.put(var.getName(), var.getParentClass());
-            }
-        }
-
-        return patient;
-    }
-
-    private void parseRuleBodyAtoms(Rule rule, Map<String, Entity> variables) {
-        for (AbstractAtom atom : rule.getBodyAtoms()) {
-            if (atom instanceof TwoArgumentsAtom) {
-                TwoArgumentsAtom twoArgumentsAtom = (TwoArgumentsAtom) atom;
-                String predicate = twoArgumentsAtom.getPredicate();
-                switch (predicate) {
-                    case "hasSymptom": {
-                        addEntityToPatient(twoArgumentsAtom, variables, "addSymptom");
-                        break;
-                    }
-                    case "negativeTest": {
-                        addEntityToPatient(twoArgumentsAtom, variables, "addNegativeTest");
-                        break;
-                    }
-                    case "hadOrHasDisease": {
-                        addEntityToPatient(twoArgumentsAtom, variables, "addPreviousOrCurrentDisease");
-                        break;
-                    }
-                    case "hasDisease": {
-                        addEntityToPatient(twoArgumentsAtom, variables, "addDisease");
-                        break;
-                    }
-                }
-
-            }
-        }
-        for (AbstractAtom atom : rule.getDeclarationAtoms()) {
-            if (atom instanceof TwoArgumentsAtom) {
-                TwoArgumentsAtom twoArgumentsAtom = (TwoArgumentsAtom) atom;
-                String predicate = twoArgumentsAtom.getPredicate();
-                switch (predicate) {
-                    case "age": {
-                        setPatientAge(rule, twoArgumentsAtom, variables);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    private void addEntityToPatient(TwoArgumentsAtom atom, Map<String, Entity> variables, String patientMethod) {
-        try {
-            addEntityToPatient(atom, variables, Patient.class.getMethod(patientMethod, Entity.class));
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void addEntityToPatient(TwoArgumentsAtom atom, Map<String, Entity> variables, Method patientMethod) {
         String pName = ((Variable) atom.getArgument1()).getName();
         Patient p = (Patient) variables.get(pName);
@@ -385,36 +316,6 @@ public class OntologyWrapper {
             default:
                 return range;
         }
-    }
-
-    private Integer selectNumberFromRange(Range<Integer> range) {
-        if (range.hasUpperBound() && range.hasLowerBound()) {
-            if (range.upperBoundType() == OPEN && range.lowerBoundType() == OPEN && range.upperEndpoint() - range.lowerEndpoint() <= 1)
-                return null;
-            if (range.upperEndpoint().equals(range.lowerEndpoint()))
-                return range.upperEndpoint();
-        }
-        int lowerBound = MIN_AGE;
-        int upperBound = MAX_AGE;
-        if (range.hasUpperBound()) {
-            switch (range.upperBoundType()) {
-                case OPEN:
-                    upperBound = range.upperEndpoint() - 1;
-                    break;
-                case CLOSED:
-                    upperBound = range.upperEndpoint();
-            }
-        }
-        if (range.hasLowerBound()) {
-            switch (range.lowerBoundType()) {
-                case OPEN:
-                    lowerBound = range.lowerEndpoint() + 1;
-                    break;
-                case CLOSED:
-                    lowerBound = range.lowerEndpoint();
-            }
-        }
-        return lowerBound + random.nextInt(upperBound - lowerBound + 1);
     }
 
     private Collection<String> getPatientStringProperties(OWLIndividual patientInd, String propertyName) {
