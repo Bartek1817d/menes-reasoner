@@ -7,13 +7,15 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.RuleAlreadyExistsException;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.model.RequiredEntitiesToLearn;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
@@ -143,8 +145,7 @@ public class PatientsService {
     }
 
     public void learnNewRules(MachineLearning machineLearning, Set<Patient> trainingSet, Map<String, Collection<String>> predicateClassCategories) throws Throwable {
-        Map<String, Collection<Entity>> predicateEntityCategories = mapCategoryClassToEntity(predicateClassCategories);
-        Collection<Rule> newGeneratedRules = machineLearning.sequentialCovering(trainingSet, predicateEntityCategories);
+        Collection<Rule> newGeneratedRules = machineLearning.sequentialCovering(trainingSet, predicateClassCategories);
         Set<Rule> oldGeneratedRules = getRules()
                 .stream()
                 .filter(this::isGeneratedRule)
@@ -153,18 +154,6 @@ public class PatientsService {
         addRules(newGeneratedRules);
     }
 
-    private Map<String, Collection<Entity>> mapCategoryClassToEntity(Map<String, Collection<String>> predicateClassCategories) {
-        HashMap<String, Collection<Entity>> predicateEntityCategories = new HashMap<>();
-        predicateClassCategories.forEach((predicate, classes) -> {
-            Set<Entity> entities = classes
-                    .stream()
-                    .map(ontology::getClassInstances)
-                    .flatMap(Collection::stream)
-                    .collect(toSet());
-            predicateEntityCategories.put(predicate, entities);
-        });
-        return predicateEntityCategories;
-    }
 
     private boolean isGeneratedRule(Rule rule) {
         return rule.getName().trim().startsWith(GENERATED_RULE_PREFIX);

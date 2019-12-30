@@ -19,6 +19,7 @@ import org.swrlapi.core.SWRLRuleRenderer;
 import org.swrlapi.factory.SWRLAPIFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
+import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.AbstractAtom;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
@@ -55,7 +56,7 @@ public class OntologyWrapper {
     private final SWRLRuleEngine ruleEngine;
     private final SWRLAPIOWLOntology ruleOntology;
     private final SWRLRuleRenderer ruleRenderer;
-    private Map<String, Entity> classes = new HashMap<>();
+    private Map<String, OntologyClass> classes = new HashMap<>();
     private OWLEntityRemover remover;
     private Map<String, Entity> entities = new HashMap<>();
     private Collection<Rule> rules = new ArrayList<>();
@@ -137,7 +138,7 @@ public class OntologyWrapper {
         rules = rulesManager.loadRules(classes, entities);
     }
 
-    public Map<String, Entity> getClasses() {
+    public Map<String, OntologyClass> getClasses() {
         return classes;
     }
 

@@ -9,6 +9,7 @@ import org.swrlapi.exceptions.SWRLBuiltInException;
 import org.swrlapi.parser.SWRLParseException;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
+import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
 
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class RulesManager {
         rules.forEach(rule -> ruleOntology.deleteSWRLRule(rule.getName()));
     }
 
-    public Collection<Rule> loadRules(Map<String, Entity> classes, Map<String, Entity> entities) {
+    public Collection<Rule> loadRules(Map<String, OntologyClass> classes, Map<String, Entity> entities) {
         Collection<Rule> rules = new ArrayList<>();
         for (SWRLAPIRule swrlRule : ruleOntology.getSWRLRules()) {
             Rule rule = new Rule(swrlRule.getRuleName());
@@ -65,7 +66,7 @@ public class RulesManager {
     }
 
     @SuppressWarnings("unchecked")
-    private AbstractAtom parseSWRLAtom(SWRLAtom swrlAtom, Map<String, Entity> classes, Map<String, Entity> entities) {
+    private AbstractAtom parseSWRLAtom(SWRLAtom swrlAtom, Map<String, OntologyClass> classes, Map<String, Entity> entities) {
         String str = swrlAtom.toString();
         Pattern atomPattern = Pattern
                 .compile("^(?<atomType>\\p{Alpha}+)\\(<\\S+#(?<atomID>\\w+)> (?<atomArguments>.+)\\)$");
@@ -92,7 +93,7 @@ public class RulesManager {
 
     private AbstractAtom parseClassAtom(String atomID,
                                         Matcher argumentMatcher,
-                                        Map<String, Entity> classes,
+                                        Map<String, OntologyClass> classes,
                                         Map<String, Entity> entities) {
         if (argumentMatcher.find()) {
             String argumentType = argumentMatcher.group("argumentType");

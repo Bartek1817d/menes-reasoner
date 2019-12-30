@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.PartialStarCreationException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
+import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
 
@@ -13,6 +14,7 @@ import java.util.function.BiConsumer;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.ComplexComparator.sortStar;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.GENERATED_RULE_PREFIX;
@@ -29,9 +31,9 @@ public class MachineLearning {
         this.ontology = ontology;
     }
 
-    public Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Map<String, Collection<Entity>> categories) throws Throwable {
+    public Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
         ExecutorService service = Executors.newCachedThreadPool();
-        Collection<Callable<Collection<Rule>>> callables = prepareCallables(trainingSet, categories);
+        Collection<Callable<Collection<Rule>>> callables = prepareCallables(trainingSet, predicateClassCategories);
         List<Future<Collection<Rule>>> futures = service.invokeAll(callables);
         return collectResults(futures);
     }
@@ -48,10 +50,17 @@ public class MachineLearning {
         return simplifyRules(rules);
     }
 
-    private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet, Map<String, Collection<Entity>> categories) {
+    private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet, Map<String, Collection<OntologyClass>> categories) {
         return categories.entrySet()
                 .stream()
-                .map(entry -> prepareCallable(trainingSet, entry.getValue(), entry.getKey()))
+                .map(entry -> prepareCallable(
+                        trainingSet,
+                        entry.getValue()
+                                .stream()
+                                .map(OntologyClass::getInstances)
+                                .flatMap(Collection::stream)
+                                .collect(toSet()),
+                        entry.getKey()))
                 .flatMap(Collection::stream)
                 .collect(toList());
     }
@@ -137,6 +146,12 @@ public class MachineLearning {
             patient.setEvaluation(0);
             return;
         }
+
+        otherPatients.forEach(otherPatient -> {
+
+        });
+
+
 //        int symptomDiff = 0;
 //        int negTestDiff = 0;
 //        int disDiff = 0;
@@ -258,6 +273,19 @@ public class MachineLearning {
             }
         }
         return rulesList;
+    }
+
+    private Map<String, Collection<Entity>> mapCategoryClassToEntity(Map<String, Collection<String>> predicateClassCategories) {
+        HashMap<String, Collection<Entity>> predicateEntityCategories = new HashMap<>();
+        predicateClassCategories.forEach((predicate, classes) -> {
+            Set<Entity> entities = classes
+                    .stream()
+                    .map(ontology::getClassInstances)
+                    .flatMap(Collection::stream)
+                    .collect(toSet());
+            predicateEntityCategories.put(predicate, entities);
+        });
+        return predicateEntityCategories;
     }
 
 }
