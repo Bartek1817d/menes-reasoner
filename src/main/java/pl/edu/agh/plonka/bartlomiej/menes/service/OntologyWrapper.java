@@ -18,9 +18,7 @@ import org.swrlapi.core.SWRLRuleEngine;
 import org.swrlapi.core.SWRLRuleRenderer;
 import org.swrlapi.factory.SWRLAPIFactory;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
-import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.*;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.AbstractAtom;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.TwoArgumentsAtom;
@@ -61,11 +59,11 @@ public class OntologyWrapper {
     private Map<String, Entity> entities = new HashMap<>();
     private Collection<Rule> rules = new ArrayList<>();
     private OntologyProperties properties;
-    private Set<String> stringProperties;
-    private Set<String> integerProperties;
-    private Set<String> entityProperties;
+    private Set<DataProperty> stringProperties;
+    private Set<DataProperty> integerProperties;
+    private Set<ObjectProperty> entityProperties;
 
-    public OntologyWrapper(String baseURL, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+    public OntologyWrapper(String baseURL) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
         factory = ontologyManager.getOWLDataFactory();
         ontology = ontologyManager.createOntology(IRI.create(baseURL));
@@ -79,14 +77,11 @@ public class OntologyWrapper {
         ruleOntology = ruleEngine.getSWRLAPIOWLOntology();
         ruleRenderer = ruleOntology.createSWRLRuleRenderer();
         properties = new OntologyProperties(factory, prefixManager);
-        entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner);
+        entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner, properties);
         rulesManager = new RulesManager(ruleOntology);
-        this.integerProperties = integerProperties;
-        this.stringProperties = stringProperties;
-        this.entityProperties = entityProperties;
     }
 
-    public OntologyWrapper(InputStream inputStream, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+    public OntologyWrapper(InputStream inputStream) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
         factory = ontologyManager.getOWLDataFactory();
         ontology = ontologyManager.loadOntologyFromOntologyDocument(inputStream);
@@ -101,15 +96,12 @@ public class OntologyWrapper {
         ruleOntology = ruleEngine.getSWRLAPIOWLOntology();
         ruleRenderer = ruleOntology.createSWRLRuleRenderer();
         properties = new OntologyProperties(factory, prefixManager);
-        entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner);
+        entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner, properties);
         rulesManager = new RulesManager(ruleOntology);
-        this.integerProperties = integerProperties;
-        this.stringProperties = stringProperties;
-        this.entityProperties = entityProperties;
         loadData();
     }
 
-    public OntologyWrapper(File file, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
+    public OntologyWrapper(File file) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
         factory = ontologyManager.getOWLDataFactory();
         ontology = ontologyManager.loadOntologyFromOntologyDocument(file);
@@ -124,17 +116,17 @@ public class OntologyWrapper {
         ruleOntology = ruleEngine.getSWRLAPIOWLOntology();
         ruleRenderer = ruleOntology.createSWRLRuleRenderer();
         properties = new OntologyProperties(factory, prefixManager);
-        entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner);
+        entitiesLoader = new EntitiesLoader(ontology, renderer, factory, reasoner, properties);
         rulesManager = new RulesManager(ruleOntology);
-        this.integerProperties = integerProperties;
-        this.stringProperties = stringProperties;
-        this.entityProperties = entityProperties;
         loadData();
     }
 
     private void loadData() {
         classes = entitiesLoader.loadClasses();
         entities = entitiesLoader.loadInstances(classes);
+        integerProperties = entitiesLoader.loadIntegerProperties();
+        stringProperties = entitiesLoader.loadStringProperties();
+        entityProperties = entitiesLoader.loadObjectProperties(classes);
         rules = rulesManager.loadRules(classes, entities);
     }
 
@@ -155,13 +147,13 @@ public class OntologyWrapper {
     private Patient getPatient(OWLIndividual patientInd) {
         Patient patient = new Patient(renderer.render(patientInd));
 
-        stringProperties.forEach(propertyName ->
+        stringProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setStringProperties(propertyName, getPatientStringProperties(patientInd, propertyName))
         );
-        integerProperties.forEach(propertyName ->
+        integerProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setIntegerProperties(propertyName, getPatientIntegerProperties(patientInd, propertyName))
         );
-        entityProperties.forEach(propertyName ->
+        entityProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName))
         );
 
@@ -174,13 +166,13 @@ public class OntologyWrapper {
 
         setIndClass(properties.patientClass, patientInd);
 
-        stringProperties.forEach(propertyName ->
+        stringProperties.stream().map(Entity::getID).forEach(propertyName ->
                 setPatientIndStringProperty(patientInd, propertyName, patient.getStringProperties(propertyName))
         );
-        integerProperties.forEach(propertyName ->
+        integerProperties.stream().map(Entity::getID).forEach(propertyName ->
                 setPatientIndIntegerProperty(patientInd, propertyName, patient.getIntegerProperties(propertyName))
         );
-        entityProperties.forEach(propertyName ->
+        entityProperties.stream().map(Entity::getID).forEach(propertyName ->
                 setPatientIndObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))
         );
 
@@ -263,15 +255,15 @@ public class OntologyWrapper {
         reasoner.flush();
         OWLNamedIndividual patientInd = factory.getOWLNamedIndividual(patient.getID(), prefixManager);
 
-        integerProperties.forEach(propertyName ->
+        integerProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setInferredIntegerProperties(
                         propertyName,
                         getPatientInferredIntegerProperty(patientInd, propertyName, patient.getIntegerProperties(propertyName))));
-        stringProperties.forEach(propertyName ->
+        stringProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setInferredStringProperties(
                         propertyName,
                         getPatientInferredStringProperty(patientInd, propertyName, patient.getStringProperties(propertyName))));
-        entityProperties.forEach(propertyName ->
+        entityProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setInferredEntityProperties(
                         propertyName,
                         getPatientInferredObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))));

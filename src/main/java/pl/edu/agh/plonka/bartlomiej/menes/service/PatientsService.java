@@ -7,6 +7,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.RuleAlreadyExistsException;
+import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.model.RequiredEntitiesToLearn;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
@@ -30,22 +31,22 @@ public class PatientsService {
     private ObservableList<Patient> patients = FXCollections.observableArrayList();
     private ObservableList<Rule> rules = FXCollections.observableArrayList();
 
-    public PatientsService(String url, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
-        createKnowledgeBase(url, integerProperties, stringProperties, entityProperties);
+    public PatientsService(String url) throws OWLOntologyCreationException {
+        createKnowledgeBase(url);
     }
 
-    public PatientsService(File file, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
-        createKnowledgeBase(file, integerProperties, stringProperties, entityProperties);
+    public PatientsService(File file) throws OWLOntologyCreationException {
+        createKnowledgeBase(file);
     }
 
-    public void createKnowledgeBase(String url, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
-        ontology = new OntologyWrapper(url, integerProperties, stringProperties, entityProperties);
+    public void createKnowledgeBase(String url) throws OWLOntologyCreationException {
+        ontology = new OntologyWrapper(url);
         patients.clear();
         rules.clear();
     }
 
-    public void createKnowledgeBase(File file, Set<String> integerProperties, Set<String> stringProperties, Set<String> entityProperties) throws OWLOntologyCreationException {
-        ontology = new OntologyWrapper(file, integerProperties, stringProperties, entityProperties);
+    public void createKnowledgeBase(File file) throws OWLOntologyCreationException {
+        ontology = new OntologyWrapper(file);
         patients.setAll(ontology.getPatients());
         rules.setAll(ontology.getRules());
     }
@@ -127,7 +128,7 @@ public class PatientsService {
         ontology.changeLanguage();
     }
 
-    public void infer(RequiredEntitiesToLearn requiredEntities, MachineLearning machineLearning, Map<String, Collection<String>> predicateClassCategories) throws Throwable {
+    public void infer(RequiredEntitiesToLearn requiredEntities, MachineLearning machineLearning, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
         Collection<Patient> invalidPatients = patients.stream()
                 .map(ontology::getInferredPatient)
                 .filter(requiredEntities::invalidPatient)
@@ -140,11 +141,11 @@ public class PatientsService {
         }
     }
 
-    public void learnNewRules(MachineLearning machineLearning, Map<String, Collection<String>> predicateClassCategories) throws Throwable {
+    public void learnNewRules(MachineLearning machineLearning, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
         learnNewRules(machineLearning, new HashSet<>(patients), predicateClassCategories);
     }
 
-    public void learnNewRules(MachineLearning machineLearning, Set<Patient> trainingSet, Map<String, Collection<String>> predicateClassCategories) throws Throwable {
+    public void learnNewRules(MachineLearning machineLearning, Set<Patient> trainingSet, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
         Collection<Rule> newGeneratedRules = machineLearning.sequentialCovering(trainingSet, predicateClassCategories);
         Set<Rule> oldGeneratedRules = getRules()
                 .stream()
