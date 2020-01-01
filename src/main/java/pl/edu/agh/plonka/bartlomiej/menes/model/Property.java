@@ -1,12 +1,14 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
-public class Property<T> extends Entity {
+import static java.util.Collections.disjoint;
 
-    protected final Set<T> ranges = new HashSet<>();
+public class Property extends Entity {
+
+    private static final Collection<String> INTEGER_DATA_TYPES = Arrays.asList("unsignedByte");
 
     public Property() {
     }
@@ -15,22 +17,8 @@ public class Property<T> extends Entity {
         super(id);
     }
 
-    public Set<T> getRanges() {
-        return ranges;
+    public static boolean isIntegerProperty(Set<String> rangeTypes) {
+        return !disjoint(rangeTypes, INTEGER_DATA_TYPES);
     }
-
-    public void setRanges(Collection<T> ranges) {
-        this.ranges.clear();
-        this.ranges.addAll(ranges);
-    }
-
-    public void addRanges(Collection<T> ranges) {
-        this.ranges.addAll(ranges);
-    }
-
-    public void addRange(T range) {
-        this.ranges.add(range);
-    }
-
 
 }

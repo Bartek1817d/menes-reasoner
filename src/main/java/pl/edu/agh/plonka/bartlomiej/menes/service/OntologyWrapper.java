@@ -32,7 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.*;
 import static java.util.stream.Collectors.toSet;
 import static org.semanticweb.owlapi.search.EntitySearcher.getDataPropertyValues;
 import static org.semanticweb.owlapi.search.EntitySearcher.getObjectPropertyValues;
@@ -59,9 +59,10 @@ public class OntologyWrapper {
     private Map<String, Entity> entities = new HashMap<>();
     private Collection<Rule> rules = new ArrayList<>();
     private OntologyProperties properties;
-    private Set<DataProperty> stringProperties;
-    private Set<DataProperty> integerProperties;
+    private Set<Property> stringProperties;
+    private Set<IntegerProperty> integerProperties;
     private Set<ObjectProperty> entityProperties;
+    private Set<Patient> patients;
 
     public OntologyWrapper(String baseURL) throws OWLOntologyCreationException {
         ontologyManager = OWLManager.createOWLOntologyManager();
@@ -127,7 +128,24 @@ public class OntologyWrapper {
         integerProperties = entitiesLoader.loadIntegerProperties();
         stringProperties = entitiesLoader.loadStringProperties();
         entityProperties = entitiesLoader.loadObjectProperties(classes);
+        patients = getPatients();
+        fillIntegerPropertiesRanges();
         rules = rulesManager.loadRules(classes, entities);
+    }
+
+    private void fillIntegerPropertiesRanges() {
+        integerProperties.forEach(this::fillIntegerPropertyRange);
+    }
+
+    private void fillIntegerPropertyRange(IntegerProperty property) {
+        Set<Integer> propertyValues = patients
+                .stream()
+                .map(p -> p.getIntegerProperties(property.getID()))
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(toSet());
+        property.setMinValue(min(propertyValues));
+        property.setMaxValue(max(propertyValues));
     }
 
     public Map<String, OntologyClass> getClasses() {
@@ -186,8 +204,8 @@ public class OntologyWrapper {
         return patient;
     }
 
-    public List<Patient> getPatients() {
-        List<Patient> patients = new ArrayList<>();
+    public Set<Patient> getPatients() {
+        Set<Patient> patients = new HashSet<>();
         Patient patient;
         for (OWLIndividual patientInd : EntitySearcher.getIndividuals(properties.patientClass, ontology)) {
             patient = getPatient(patientInd);

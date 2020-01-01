@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.PartialStarCreationException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
+import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
 import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
@@ -13,7 +14,6 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.ComplexComparator.sortStar;
@@ -31,9 +31,9 @@ public class MachineLearning {
         this.ontology = ontology;
     }
 
-    public Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
+    public Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Set<ObjectProperty> predicateCategories) throws Throwable {
         ExecutorService service = Executors.newCachedThreadPool();
-        Collection<Callable<Collection<Rule>>> callables = prepareCallables(trainingSet, predicateClassCategories);
+        Collection<Callable<Collection<Rule>>> callables = prepareCallables(trainingSet, predicateCategories);
         List<Future<Collection<Rule>>> futures = service.invokeAll(callables);
         return collectResults(futures);
     }
@@ -50,27 +50,14 @@ public class MachineLearning {
         return simplifyRules(rules);
     }
 
-    private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet, Map<String, Collection<OntologyClass>> categories) {
-        return categories.entrySet()
-                .stream()
-                .map(entry -> prepareCallable(
-                        trainingSet,
-                        entry.getValue()
-                                .stream()
-                                .map(OntologyClass::getInstances)
-                                .flatMap(Collection::stream)
-                                .collect(toSet()),
-                        entry.getKey()))
-                .flatMap(Collection::stream)
-                .collect(toList());
-    }
-
-    private Collection<Callable<Collection<Rule>>> prepareCallable(Set<Patient> trainingSet,
-                                                                   Collection<Entity> entities,
-                                                                   String categoryPredicate) {
+    private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet, Set<ObjectProperty> predicateCategories) {
         Collection<Callable<Collection<Rule>>> callables = new ArrayList<>();
-        for (Entity entity : entities) {
-            callables.add(() -> sequentialCovering(trainingSet, new Category(entity, categoryPredicate)));
+        for (ObjectProperty predicate : predicateCategories) {
+            for (OntologyClass range : predicate.getRanges()) {
+                for (Entity instance : range.getInstances()) {
+                    callables.add(() -> sequentialCovering(trainingSet, new Category(instance, predicate.getID())));
+                }
+            }
         }
         return callables;
     }

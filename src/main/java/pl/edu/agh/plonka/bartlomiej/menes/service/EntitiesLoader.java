@@ -5,10 +5,7 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
 import org.slf4j.Logger;
-import pl.edu.agh.plonka.bartlomiej.menes.model.DataProperty;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
-import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
-import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
+import pl.edu.agh.plonka.bartlomiej.menes.model.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +14,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
+import static pl.edu.agh.plonka.bartlomiej.menes.model.Property.isIntegerProperty;
 
 class EntitiesLoader {
 
@@ -59,21 +57,19 @@ class EntitiesLoader {
         return instances;
     }
 
-    public Set<DataProperty> loadIntegerProperties() {
+    public Set<IntegerProperty> loadIntegerProperties() {
         return ontology.getDataPropertiesInSignature()
                 .stream()
-                .map(this::loadDataProperty)
+                .map(this::loadIntegerProperty)
                 .filter(Objects::nonNull)
-                .filter(DataProperty::isIntegerProperty)
                 .collect(toSet());
     }
 
-    public Set<DataProperty> loadStringProperties() {
+    public Set<Property> loadStringProperties() {
         return ontology.getDataPropertiesInSignature()
                 .stream()
-                .map(this::loadDataProperty)
+                .map(this::loadStringProperty)
                 .filter(Objects::nonNull)
-                .filter(DataProperty::isIntegerProperty)
                 .collect(toSet());
     }
 
@@ -85,46 +81,74 @@ class EntitiesLoader {
                 .collect(toSet());
     }
 
-    private DataProperty loadDataProperty(OWLDataProperty owlDataProperty) {
+    private IntegerProperty loadIntegerProperty(OWLDataProperty owlDataProperty) {
         String propertyName = renderer.render(owlDataProperty);
+        if (!validateDataProperty(propertyName, owlDataProperty))
+            return null;
+        Set<String> rangeTypes = getDataPropertyRangeTypes(owlDataProperty);
+        if (!isIntegerProperty(rangeTypes))
+            return null;
+        return new IntegerProperty(propertyName);
+    }
+
+    private Property loadStringProperty(OWLDataProperty owlDataProperty) {
+        String propertyName = renderer.render(owlDataProperty);
+        if (!validateDataProperty(propertyName, owlDataProperty))
+            return null;
+        Set<String> rangeTypes = getDataPropertyRangeTypes(owlDataProperty);
+        if (isIntegerProperty(rangeTypes))
+            return null;
+        return new Property(propertyName);
+    }
+
+    private boolean validateDataProperty(String propertyName, OWLDataProperty owlDataProperty) {
         if (!reasoner.getDataPropertyDomains(owlDataProperty, false).containsEntity(ontologyProperties.patientClass)) {
             LOG.warn("{} doesn't have 'Patient' domain.", propertyName);
-            return null;
+            return false;
         }
         if (!reasoner.getSubDataProperties(owlDataProperty, false).isSingleton()) {
             LOG.warn("{} isn't bottom property.", propertyName);
-            return null;
+            return false;
         }
+        return true;
+    }
 
-        Set<String> rangeTypes = ontology.getDataPropertyRangeAxioms(owlDataProperty)
+    private boolean validateObjectProperty(String propertyName, OWLObjectProperty owlObjectProperty) {
+        if (!reasoner.getObjectPropertyDomains(owlObjectProperty, false).containsEntity(ontologyProperties.patientClass)) {
+            LOG.warn("{} doesn't have 'Patient' domain.", propertyName);
+            return false;
+        }
+        if (!reasoner.getSubObjectProperties(owlObjectProperty, false).isSingleton()) {
+            LOG.warn("{} isn't bottom property.", propertyName);
+            return false;
+        }
+        return true;
+    }
+
+    private Set<String> getDataPropertyRangeTypes(OWLDataProperty owlDataProperty) {
+        return ontology.getDataPropertyRangeAxioms(owlDataProperty)
                 .stream()
                 .map(OWLPropertyRangeAxiom::getRange)
                 .map(renderer::render)
                 .collect(toSet());
-
-        DataProperty property = new DataProperty(propertyName);
-        property.setRanges(rangeTypes);
-        return property;
     }
 
-    private ObjectProperty loadObjectProperty(OWLObjectProperty owlObjectProperty, Map<String, OntologyClass> classes) {
-        String propertyName = renderer.render(owlObjectProperty);
-        if (!reasoner.getObjectPropertyDomains(owlObjectProperty, false).containsEntity(ontologyProperties.patientClass)) {
-            LOG.warn("{} doesn't have 'Patient' domain.", propertyName);
-            return null;
-        }
-        if (!reasoner.getSubObjectProperties(owlObjectProperty, false).isSingleton()) {
-            LOG.warn("{} isn't bottom property.", propertyName);
-            return null;
-        }
-
-        Set<OntologyClass> rangeTypes = ontology.getObjectPropertyRangeAxioms(owlObjectProperty)
+    private Set<OntologyClass> getObjectPropertyRangeTypes(OWLObjectProperty owlObjectProperty, Map<String, OntologyClass> classes) {
+        return ontology.getObjectPropertyRangeAxioms(owlObjectProperty)
                 .stream()
                 .map(OWLPropertyRangeAxiom::getRange)
                 .map(renderer::render)
                 .map(classes::get)
                 .filter(Objects::nonNull)
                 .collect(toSet());
+    }
+
+    private ObjectProperty loadObjectProperty(OWLObjectProperty owlObjectProperty, Map<String, OntologyClass> classes) {
+        String propertyName = renderer.render(owlObjectProperty);
+        if (!validateObjectProperty(propertyName, owlObjectProperty))
+            return null;
+
+        Set<OntologyClass> rangeTypes = getObjectPropertyRangeTypes(owlObjectProperty, classes);
 
         ObjectProperty property = new ObjectProperty(propertyName);
         property.setRanges(rangeTypes);

@@ -7,7 +7,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.RuleAlreadyExistsException;
-import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
+import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.model.RequiredEntitiesToLearn;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
@@ -15,7 +15,6 @@ import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -128,7 +127,7 @@ public class PatientsService {
         ontology.changeLanguage();
     }
 
-    public void infer(RequiredEntitiesToLearn requiredEntities, MachineLearning machineLearning, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
+    public void infer(RequiredEntitiesToLearn requiredEntities, MachineLearning machineLearning, Set<ObjectProperty> predicateCategories) throws Throwable {
         Collection<Patient> invalidPatients = patients.stream()
                 .map(ontology::getInferredPatient)
                 .filter(requiredEntities::invalidPatient)
@@ -136,17 +135,17 @@ public class PatientsService {
         if (!invalidPatients.isEmpty()) {
             Set<Patient> trainingSet = new HashSet<>(getPatients());
             trainingSet.removeAll(invalidPatients);
-            learnNewRules(machineLearning, trainingSet, predicateClassCategories);
+            learnNewRules(machineLearning, trainingSet, predicateCategories);
             patients.forEach(ontology::getInferredPatient);
         }
     }
 
-    public void learnNewRules(MachineLearning machineLearning, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
-        learnNewRules(machineLearning, new HashSet<>(patients), predicateClassCategories);
+    public void learnNewRules(MachineLearning machineLearning, Set<ObjectProperty> predicateCategories) throws Throwable {
+        learnNewRules(machineLearning, new HashSet<>(patients), predicateCategories);
     }
 
-    public void learnNewRules(MachineLearning machineLearning, Set<Patient> trainingSet, Map<String, Collection<OntologyClass>> predicateClassCategories) throws Throwable {
-        Collection<Rule> newGeneratedRules = machineLearning.sequentialCovering(trainingSet, predicateClassCategories);
+    public void learnNewRules(MachineLearning machineLearning, Set<Patient> trainingSet, Set<ObjectProperty> predicateCategories) throws Throwable {
+        Collection<Rule> newGeneratedRules = machineLearning.sequentialCovering(trainingSet, predicateCategories);
         Set<Rule> oldGeneratedRules = getRules()
                 .stream()
                 .filter(this::isGeneratedRule)
