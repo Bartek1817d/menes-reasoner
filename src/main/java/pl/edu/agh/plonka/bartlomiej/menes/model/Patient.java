@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 
 import java.util.*;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.FIRST_NAME_PROPERTY;
@@ -161,7 +162,11 @@ public class Patient extends Entity implements Comparable<Patient> {
     }
 
     public Set<Entity> getEntityProperties(String propertyName) {
-        return entityProperties.get(propertyName);
+        Set<Entity> properties = entityProperties.get(propertyName);
+        if (properties == null)
+            return emptySet();
+        else
+            return properties;
     }
 
     public Map<String, Set<String>> getInferredStringProperties() {

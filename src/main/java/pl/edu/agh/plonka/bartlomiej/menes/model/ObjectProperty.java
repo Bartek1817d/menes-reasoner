@@ -3,6 +3,7 @@ package pl.edu.agh.plonka.bartlomiej.menes.model;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ObjectProperty extends Property {
 
@@ -30,5 +31,13 @@ public class ObjectProperty extends Property {
 
     public void addRange(OntologyClass range) {
         this.ranges.add(range);
+    }
+
+    public Set<Entity> getRangeValues() {
+        return ranges
+                .stream()
+                .map(OntologyClass::getInstances)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 }

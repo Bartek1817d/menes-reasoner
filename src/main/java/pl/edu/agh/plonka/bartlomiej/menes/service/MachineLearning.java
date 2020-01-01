@@ -1,18 +1,17 @@
 package pl.edu.agh.plonka.bartlomiej.menes.service;
 
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.exception.PartialStarCreationException;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
-import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
-import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.*;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
+import static com.google.common.collect.Sets.difference;
+import static com.google.common.collect.Sets.symmetricDifference;
+import static java.lang.Math.abs;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -52,22 +51,24 @@ public class MachineLearning {
 
     private Collection<Callable<Collection<Rule>>> prepareCallables(Set<Patient> trainingSet, Set<ObjectProperty> predicateCategories) {
         Collection<Callable<Collection<Rule>>> callables = new ArrayList<>();
+        PremiseProperties premiseProperties = new PremiseProperties(
+                ontology.getIntegerProperties(),
+                difference(ontology.getEntityProperties(), predicateCategories));
         for (ObjectProperty predicate : predicateCategories) {
-            for (OntologyClass range : predicate.getRanges()) {
-                for (Entity instance : range.getInstances()) {
-                    callables.add(() -> sequentialCovering(trainingSet, new Category(instance, predicate.getID())));
-                }
+            for (Entity instance : predicate.getRangeValues()) {
+                callables.add(() -> sequentialCovering(trainingSet, new Category(instance, predicate.getID()), premiseProperties));
             }
         }
         return callables;
     }
 
-    private Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Category category) throws PartialStarCreationException {
+    private Collection<Rule> sequentialCovering(Set<Patient> trainingSet, Category category,
+                                                PremiseProperties premiseProperties) throws PartialStarCreationException {
         Collection<Rule> rules = new HashSet<>();
         Set<Patient> uncoveredSet = new HashSet<>(trainingSet);
         int ruleIdx = 1;
         while (assertPatientWithCategoryInSet(uncoveredSet, category)) {
-            Complex complex = findComplex(trainingSet, uncoveredSet, category);
+            Complex complex = findComplex(trainingSet, uncoveredSet, category, premiseProperties);
             removeCoveredExamples(uncoveredSet, complex);
             Rule rule = complex.generateRule(generateRuleName(category, ruleIdx++), category, ontology);
             rules.add(rule);
@@ -75,11 +76,12 @@ public class MachineLearning {
         return rules;
     }
 
-    private Complex findComplex(Set<Patient> trainingSet, Set<Patient> uncoveredSet, Category category) throws PartialStarCreationException {
+    private Complex findComplex(Set<Patient> trainingSet, Set<Patient> uncoveredSet, Category category,
+                                PremiseProperties premiseProperties) throws PartialStarCreationException {
         LOG.debug("findComplex");
         Star star = new Star();
-        Patient positiveSeed = positiveSeed(trainingSet, uncoveredSet, category);
-        Patient negativeSeed = negativeSeed(trainingSet, star, positiveSeed, category);
+        Patient positiveSeed = positiveSeed(trainingSet, uncoveredSet, category, premiseProperties);
+        Patient negativeSeed = negativeSeed(trainingSet, star, positiveSeed, category, premiseProperties);
         while (positiveSeed != null && negativeSeed != null) {
             Collection<Complex> partialStar = partialStar(positiveSeed, negativeSeed);
             if (partialStar.isEmpty()) {
@@ -90,27 +92,29 @@ public class MachineLearning {
             star.deleteNarrowComplexes();
             sortStar(star, category, trainingSet);
             star.leaveFirstElements(5);
-            negativeSeed = negativeSeed(trainingSet, star, positiveSeed, category);
+            negativeSeed = negativeSeed(trainingSet, star, positiveSeed, category, premiseProperties);
         }
         return star.get(0);
     }
 
-    private Patient positiveSeed(Set<Patient> trainingSet, Set<Patient> uncoveredSet, Category category) {
+    private Patient positiveSeed(Set<Patient> trainingSet, Set<Patient> uncoveredSet, Category category,
+                                 PremiseProperties premiseProperties) {
         LOG.debug("positiveSeed");
         if (uncoveredSet.isEmpty())
             return null;
-        Set<Patient> coveredSet = Sets.difference(trainingSet, uncoveredSet);
+        Set<Patient> coveredSet = difference(trainingSet, uncoveredSet);
         Set<Patient> categoryCoveredSet = new HashSet<>();
         for (Patient uncovered : uncoveredSet) {
             if (category.assertPatientInCategory(uncovered)) {
-                calculateDistance(uncovered, coveredSet);
+                calculateDistance(uncovered, coveredSet, premiseProperties);
                 categoryCoveredSet.add(uncovered);
             }
         }
         return Collections.max(categoryCoveredSet);
     }
 
-    private Patient negativeSeed(Collection<Patient> trainingSet, Star star, Patient positiveSeed, Category category) {
+    private Patient negativeSeed(Collection<Patient> trainingSet, Star star, Patient positiveSeed, Category category,
+                                 PremiseProperties premiseProperties) {
         LOG.debug("negativeSeed");
         List<Patient> negativeSeeds = new ArrayList<>();
         for (Patient patient : trainingSet) {
@@ -122,11 +126,11 @@ public class MachineLearning {
             return null;
         Set<Patient> positiveSeedSingleton = Collections.singleton(positiveSeed);
         for (Patient negativeSeed : negativeSeeds)
-            calculateDistance(negativeSeed, positiveSeedSingleton);
+            calculateDistance(negativeSeed, positiveSeedSingleton, premiseProperties);
         return Collections.min(negativeSeeds);
     }
 
-    private void calculateDistance(Patient patient, Collection<Patient> otherPatients) {
+    private void calculateDistance(Patient patient, Collection<Patient> otherPatients, PremiseProperties premiseProperties) {
         LOG.debug("calculateDistance");
         if (otherPatients.isEmpty()) {
             LOG.debug("No other patients. Set patient distance to 0");
@@ -134,37 +138,40 @@ public class MachineLearning {
             return;
         }
 
-        otherPatients.forEach(otherPatient -> {
+        double objectPropertiesEvaluation = premiseProperties.objectProperties
+                .stream()
+                .mapToDouble(property -> entityPropertyDifferenceEvaluation(patient, otherPatients, property))
+                .sum();
+        double integerPropertiesEvaluation = premiseProperties.integerProperties
+                .stream()
+                .mapToDouble(property -> integerPropertyDifferenceEvaluation(patient, otherPatients, property))
+                .sum();
 
-        });
+        patient.setEvaluation((float) (objectPropertiesEvaluation + integerPropertiesEvaluation));
+    }
 
+    private Float entityPropertyDifferenceEvaluation(Patient patient, Collection<Patient> otherPatients, ObjectProperty property) {
+        Set<Entity> patientProperties = patient.getEntityProperties(property.getID());
+        int difference = otherPatients
+                .stream()
+                .map(otherPatient -> otherPatient.getEntityProperties(property.getID()))
+                .mapToInt(otherPatientProps -> symmetricDifference(otherPatientProps, patientProperties).size())
+                .sum();
 
-//        int symptomDiff = 0;
-//        int negTestDiff = 0;
-//        int disDiff = 0;
-//        int ageDiff = 0;
-//        int heightDiff = 0;
-//        int weightDiff = 0;
-//        for (Patient otherPatient : otherPatients) {
-//            symptomDiff += Sets.symmetricDifference(new HashSet<>(patient.getSymptoms()), new HashSet<>(otherPatient.getSymptoms())).size();
-//            negTestDiff += Sets.symmetricDifference(new HashSet<>(patient.getNegativeTests()), new HashSet<>(otherPatient.getNegativeTests())).size();
-//            disDiff += Sets.symmetricDifference(new HashSet<>(patient.getPreviousDiseases()),
-//                    new HashSet<>(otherPatient.getPreviousDiseases())).size();
-//            if (patient.getAge() >= 0 && otherPatient.getAge() >= 0)
-//                ageDiff += Math.abs(patient.getAge() - otherPatient.getAge());
-//            if (patient.getHeight() >= 0 && otherPatient.getHeight() >= 0)
-//                heightDiff += Math.abs(patient.getHeight() - otherPatient.getHeight());
-//            if (patient.getWeight() >= 0 && otherPatient.getWeight() >= 0)
-//                weightDiff += Math.abs(patient.getWeight() - otherPatient.getWeight());
-//        }
-//        float symptomEv = (float) symptomDiff / (otherPatients.size() * ontology.getSymptoms().size());
-//        float negTestEv = (float) negTestDiff / (otherPatients.size() * ontology.getTests().size());
-//        float disEv = (float) disDiff / (otherPatients.size() * ontology.getDiseases().size());
-//        float ageEv = (float) ageDiff / (otherPatients.size() * (PATIENT_MAX_AGE - PATIENT_MIN_AGE));
-//        float heightEv = (float) heightDiff / (otherPatients.size() * (PATIENT_MAX_HEIGHT - PATIENT_MIN_HEIGHT));
-//        float weightEv = (float) weightDiff / (otherPatients.size() * (PATIENT_MAX_WEIGHT - PATIENT_MIN_WEIGHT));
-//
-//        patient.setEvaluation(symptomEv + negTestEv + disEv + ageEv + heightEv + weightEv);
+        return (float) difference / (otherPatients.size() * property.getRangeValues().size());
+    }
+
+    private Float integerPropertyDifferenceEvaluation(Patient patient, Collection<Patient> otherPatients, IntegerProperty property) {
+        Integer patientProperty = patient.getIntegerProperty(property.getID());
+        if (patientProperty == null)
+            return 0f;
+        int difference = otherPatients
+                .stream()
+                .map(otherPatient -> otherPatient.getIntegerProperty(property.getID()))
+                .mapToInt(otherPatientProp -> abs(patientProperty - otherPatientProp))
+                .sum();
+
+        return (float) difference / (otherPatients.size() * (property.getMaxValue() - property.getMinValue()));
     }
 
     private Collection<Complex> partialStar(Patient positivePatient, Patient negativePatient) {

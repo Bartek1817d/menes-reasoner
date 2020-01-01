@@ -293,7 +293,7 @@ public class OntologyWrapper {
         String pName = ((Variable) atom.getArgument1()).getName();
         Patient p = (Patient) variables.get(pName);
         try {
-            patientMethod.invoke(p, (Entity) atom.getArgument2());
+            patientMethod.invoke(p, atom.getArgument2());
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
@@ -467,5 +467,17 @@ public class OntologyWrapper {
             } else
                 patient.setID(NameUtils.generateName(fn, ln));
         }
+    }
+
+    public Set<Property> getStringProperties() {
+        return stringProperties;
+    }
+
+    public Set<IntegerProperty> getIntegerProperties() {
+        return integerProperties;
+    }
+
+    public Set<ObjectProperty> getEntityProperties() {
+        return entityProperties;
     }
 }
