@@ -7,13 +7,12 @@ import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
 
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.rule.ComplexComparator.sortStar;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.GENERATED_RULE_PREFIX;
@@ -83,7 +82,7 @@ public class MachineLearning {
         Patient positiveSeed = positiveSeed(trainingSet, uncoveredSet, category, premiseProperties);
         Patient negativeSeed = negativeSeed(trainingSet, star, positiveSeed, category, premiseProperties);
         while (positiveSeed != null && negativeSeed != null) {
-            Collection<Complex> partialStar = partialStar(positiveSeed, negativeSeed);
+            Collection<Complex> partialStar = partialStar(positiveSeed, negativeSeed, premiseProperties);
             if (partialStar.isEmpty()) {
                 LOG.debug("Partial star is empty");
                 throw new PartialStarCreationException(positiveSeed, negativeSeed);
@@ -174,19 +173,18 @@ public class MachineLearning {
         return (float) difference / (otherPatients.size() * (property.getMaxValue() - property.getMinValue()));
     }
 
-    private Collection<Complex> partialStar(Patient positivePatient, Patient negativePatient) {
-        Collection<Complex> resultComplexes = new ArrayList<>();
-//        resultComplexes.addAll(createComplexes(positivePatient.getSymptoms(), negativePatient.getSymptoms(), Complex::setSymptomSelector));
-//        resultComplexes.addAll(createComplexes(positivePatient.getNegativeTests(), negativePatient.getNegativeTests(), Complex::setNegativeTestsSelector));
-//        resultComplexes.addAll(createComplexes(positivePatient.getPreviousDiseases(), negativePatient.getPreviousDiseases(), Complex::setPreviousDiseasesSelector));
-//
-//        Complex ageComplex = createLinearComplex(positivePatient.getAge(), negativePatient.getAge(), Complex::setAgeSelector);
-//        Complex heightComplex = createLinearComplex(positivePatient.getHeight(), negativePatient.getHeight(), Complex::setHeightSelector);
-//        Complex weightComplex = createLinearComplex(positivePatient.getWeight(), negativePatient.getWeight(), Complex::setWeightSelector);
-//
-//        if (ageComplex != null) resultComplexes.add(ageComplex);
-//        if (heightComplex != null) resultComplexes.add(heightComplex);
-//        if (weightComplex != null) resultComplexes.add(weightComplex);
+    private Collection<Complex> partialStar(Patient positivePatient, Patient negativePatient, PremiseProperties premiseProperties) {
+        Collection<Complex> resultComplexes = premiseProperties.objectProperties
+                .stream()
+                .map(p -> createComplexes(p, positivePatient, negativePatient))
+                .flatMap(Collection::stream)
+                .collect(toList());
+
+        resultComplexes.addAll(premiseProperties.integerProperties
+                .stream()
+                .map(p -> createAtomComplex(p, positivePatient, negativePatient))
+                .filter(Objects::nonNull)
+                .collect(toList()));
 
         return resultComplexes;
     }
@@ -196,40 +194,38 @@ public class MachineLearning {
         trainingSet.removeIf(complex::isPatientCovered);
     }
 
-    private Collection<Complex> createComplexes(Collection<Entity> positiveEntities, Collection<Entity> negativeEntities,
-                                                BiConsumer<Complex, EntitiesSelector> complexSetter) {
-        ArrayList<Complex> complexes = new ArrayList<>();
-        if (!positiveEntities.isEmpty()) {
-            for (Entity entity : positiveEntities) {
-                if (!negativeEntities.contains(entity)) {
-                    Complex complex = createComplex(entity, complexSetter);
-                    complexes.add(complex);
-                }
-            }
-        }
-        return complexes;
+    private Collection<Complex> createComplexes(ObjectProperty property, Patient positivePatient, Patient negativePatient) {
+        Set<Entity> positiveProperties = positivePatient.getEntityProperties(property.getID());
+        Set<Entity> negativeProperties = negativePatient.getEntityProperties(property.getID());
+        return positiveProperties
+                .stream()
+                .filter(p -> !negativeProperties.contains(p))
+                .map(p -> createAtomComplex(property, p))
+                .collect(toList());
     }
 
-    private Complex createComplex(Entity entity, BiConsumer<Complex, EntitiesSelector> complexSetter) {
+    private Complex createAtomComplex(ObjectProperty property, Entity entity) {
         EntitiesSelector selector = new EntitiesSelector();
         selector.add(entity);
         Complex complex = new Complex();
-        complexSetter.accept(complex, selector);
+        complex.setEntitySelector(property, selector);
         return complex;
     }
 
-    private Complex createLinearComplex(int posVal, int negVal, BiConsumer<Complex, LinearSelector<Integer>> complexSetter) {
+    private Complex createAtomComplex(IntegerProperty property, Patient positivePatient, Patient negativePatient) {
+        Integer posVal = positivePatient.getIntegerProperty(property.getID());
+        Integer negVal = negativePatient.getIntegerProperty(property.getID());
         LinearSelector<Integer> selector = createLinearSelector(posVal, negVal);
         if (selector != null) {
             Complex complex = new Complex();
-            complexSetter.accept(complex, selector);
+            complex.setIntegerSelector(property, selector);
             return complex;
         }
         return null;
     }
 
-    private LinearSelector createLinearSelector(int posValue, int negValue) {
-        if (posValue >= 0 && negValue >= 0 && posValue != negValue) {
+    private LinearSelector createLinearSelector(Integer posValue, Integer negValue) {
+        if (posValue != null && negValue != null && !posValue.equals(negValue)) {
             int midValue = Math.round(posValue + (negValue - posValue) * epsilon);
             if (negValue < posValue) {
                 if (midValue == negValue)
@@ -268,18 +264,4 @@ public class MachineLearning {
         }
         return rulesList;
     }
-
-    private Map<String, Collection<Entity>> mapCategoryClassToEntity(Map<String, Collection<String>> predicateClassCategories) {
-        HashMap<String, Collection<Entity>> predicateEntityCategories = new HashMap<>();
-        predicateClassCategories.forEach((predicate, classes) -> {
-            Set<Entity> entities = classes
-                    .stream()
-                    .map(ontology::getClassInstances)
-                    .flatMap(Collection::stream)
-                    .collect(toSet());
-            predicateEntityCategories.put(predicate, entities);
-        });
-        return predicateEntityCategories;
-    }
-
 }

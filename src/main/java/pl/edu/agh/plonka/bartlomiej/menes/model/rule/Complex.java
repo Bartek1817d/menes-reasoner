@@ -2,6 +2,8 @@ package pl.edu.agh.plonka.bartlomiej.menes.model.rule;
 
 import org.slf4j.Logger;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
+import pl.edu.agh.plonka.bartlomiej.menes.model.IntegerProperty;
+import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 import pl.edu.agh.plonka.bartlomiej.menes.service.OntologyWrapper;
 
@@ -41,9 +43,7 @@ public class Complex implements Comparable<Complex> {
             return selector1.conjunction(selector2);
         if (selector1 != null)
             return selector1;
-        if (selector2 != null)
-            return selector2;
-        return null;
+        return selector2;
     }
 
     public static Collection<Complex> intersection(Collection<Complex> complexes1, Collection<Complex> complexes2) {
@@ -219,6 +219,13 @@ public class Complex implements Comparable<Complex> {
         return 0;
     }
 
+    public void setEntitySelector(ObjectProperty property, EntitiesSelector selector) {
+        entitySelectors.put(property.getID(), selector);
+    }
+
+    public void setIntegerSelector(IntegerProperty property, LinearSelector<Integer> selector) {
+        linearSelectors.put(property.getID(), selector);
+    }
 
     private static <T, U> Map<T, U> mergeMaps(Map<T, U> map1, Map<T, U> map2, BinaryOperator<U> conflictResolver) {
         return Stream.of(map1, map2)
