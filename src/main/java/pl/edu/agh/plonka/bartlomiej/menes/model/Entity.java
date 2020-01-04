@@ -17,7 +17,7 @@ public class Entity {
     private String id;
     private String label;
     private String comment;
-    private final Set<Entity> classes = new HashSet<>();
+    private final Set<OntologyClass> classes = new HashSet<>();
 
     private Map<String, String> languageLabelMap = new HashMap<>();
     private Map<String, String> languageCommentMap = new HashMap<>();
@@ -55,20 +55,20 @@ public class Entity {
         this.languageCommentMap.put("en", comment);
     }
 
-    public Set<Entity> getClasses() {
+    public Set<OntologyClass> getClasses() {
         return classes;
     }
 
-    public void setClasses(Set<Entity> classes) {
+    public void setClasses(Set<OntologyClass> classes) {
         this.classes.clear();
         this.classes.addAll(classes);
     }
 
-    public void addClasses(Set<Entity> classes) {
+    public void addClasses(Set<OntologyClass> classes) {
         this.classes.addAll(classes);
     }
 
-    public void addClass(Entity cls) {
+    public void addClass(OntologyClass cls) {
         this.classes.add(cls);
     }
 

@@ -15,6 +15,7 @@ import java.util.Set;
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.Property.isIntegerProperty;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
 class EntitiesLoader {
 
@@ -34,27 +35,18 @@ class EntitiesLoader {
         this.ontologyProperties = ontologyProperties;
     }
 
-    public Map<String, OntologyClass> loadClasses() {
-        Map<String, OntologyClass> classes = new HashMap<>();
-        for (OWLClass owlClass : ontology.getClassesInSignature()) {
-            OntologyClass classEntity = loadClass(owlClass, classes);
-
-            for (OWLClassExpression owlSuperClass : EntitySearcher.getSuperClasses(owlClass, ontology)) {
-                if (owlSuperClass.isAnonymous())
-                    continue;
-                Entity superClassEntity = loadClass(owlSuperClass.asOWLClass(), classes);
-                classEntity.addClass(superClassEntity);
-            }
-        }
-        return classes;
+    public Set<OntologyClass> loadClasses() {
+        return ontology.getClassesInSignature()
+                .stream()
+                .map(this::createClass)
+                .collect(toSet());
     }
 
-    public Map<String, Entity> loadInstances(Map<String, OntologyClass> classes) {
-        Map<String, Entity> instances = new HashMap<>();
-        for (OWLNamedIndividual owlInstance : ontology.getIndividualsInSignature()) {
-            loadInstance(owlInstance, instances, classes);
-        }
-        return instances;
+    public Set<Entity> loadInstances(Set<OntologyClass> classes) {
+        return ontology.getIndividualsInSignature()
+                .stream()
+                .map(individual -> loadInstance(individual, classes))
+                .collect(toSet());
     }
 
     public Set<IntegerProperty> loadIntegerProperties() {
@@ -73,7 +65,7 @@ class EntitiesLoader {
                 .collect(toSet());
     }
 
-    public Set<ObjectProperty> loadObjectProperties(Map<String, OntologyClass> classes) {
+    public Set<ObjectProperty> loadObjectProperties(Set<OntologyClass> classes) {
         return ontology.getObjectPropertiesInSignature()
                 .stream()
                 .map(p -> loadObjectProperty(p, classes))
@@ -133,17 +125,17 @@ class EntitiesLoader {
                 .collect(toSet());
     }
 
-    private Set<OntologyClass> getObjectPropertyRangeTypes(OWLObjectProperty owlObjectProperty, Map<String, OntologyClass> classes) {
+    private Set<OntologyClass> getObjectPropertyRangeTypes(OWLObjectProperty owlObjectProperty, Set<OntologyClass> classes) {
         return ontology.getObjectPropertyRangeAxioms(owlObjectProperty)
                 .stream()
                 .map(OWLPropertyRangeAxiom::getRange)
                 .map(renderer::render)
-                .map(classes::get)
+                .map(id -> findEntity(id, classes))
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
 
-    private ObjectProperty loadObjectProperty(OWLObjectProperty owlObjectProperty, Map<String, OntologyClass> classes) {
+    private ObjectProperty loadObjectProperty(OWLObjectProperty owlObjectProperty, Set<OntologyClass> classes) {
         String propertyName = renderer.render(owlObjectProperty);
         if (!validateObjectProperty(propertyName, owlObjectProperty))
             return null;
@@ -153,24 +145,6 @@ class EntitiesLoader {
         ObjectProperty property = new ObjectProperty(propertyName);
         property.setRanges(rangeTypes);
         return property;
-    }
-
-
-    private OntologyClass loadClass(OWLEntity owlClass, Map<String, OntologyClass> classes) {
-        String classID = renderer.render(owlClass);
-        OntologyClass classEntity = classes.get(classID);
-        if (classEntity == null) {
-            classEntity = new OntologyClass(classID);
-            classes.put(classID, classEntity);
-        }
-
-        if (classEntity.getLabel() == null) {
-            classEntity.setLanguageLabelMap(getLabel(owlClass));
-            classEntity.setLanguageCommentMap(getComment(owlClass));
-            classEntity.setLanguage();
-        }
-
-        return classEntity;
     }
 
     private Map<String, String> getLabel(OWLEntity owlClass) {
@@ -194,19 +168,41 @@ class EntitiesLoader {
         return propertyMap;
     }
 
-    private Entity loadInstance(OWLNamedIndividual owlInstance, Map<String, Entity> instances, Map<String, OntologyClass> classes) {
+    private Entity loadInstance(OWLNamedIndividual owlInstance, Set<OntologyClass> classes) {
         String instanceID = renderer.render(owlInstance);
         Entity instance = new Entity(instanceID);
-        for (OWLClassExpression owlParentClass : EntitySearcher.getTypes(owlInstance, ontology)) {
-            OntologyClass cls = classes.get(renderer.render(owlParentClass));
-            cls.addInstance(instance);
-            instance.addClass(cls);
-        }
+
+        reasoner.getTypes(owlInstance, false).getFlattened()
+                .stream()
+                .map(owlClass -> getOrCreateClass(owlClass, classes))
+                .forEach(type -> {
+                    type.addInstance(instance);
+                    instance.addClass(type);
+                });
+
         instance.setLanguageLabelMap(getLabel(owlInstance));
         instance.setLanguageCommentMap(getComment(owlInstance));
         instance.setLanguage();
-        instances.put(instanceID, instance);
         return instance;
+    }
+
+    private OntologyClass getOrCreateClass(OWLClass owlClass, Set<OntologyClass> classes) {
+        String classID = renderer.render(owlClass);
+        OntologyClass classEntity = findEntity(classID, classes);
+        if (classEntity == null) {
+            classEntity = createClass(owlClass);
+            classes.add(classEntity);
+        }
+        return classEntity;
+    }
+
+    private OntologyClass createClass(OWLClass owlClass) {
+        String classID = renderer.render(owlClass);
+        OntologyClass classEntity = new OntologyClass(classID);
+        classEntity.setLanguageLabelMap(getLabel(owlClass));
+        classEntity.setLanguageCommentMap(getComment(owlClass));
+        classEntity.setLanguage();
+        return classEntity;
     }
 }
 

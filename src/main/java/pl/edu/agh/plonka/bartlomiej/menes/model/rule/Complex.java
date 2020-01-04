@@ -1,10 +1,7 @@
 package pl.edu.agh.plonka.bartlomiej.menes.model.rule;
 
 import org.slf4j.Logger;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
-import pl.edu.agh.plonka.bartlomiej.menes.model.IntegerProperty;
-import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.*;
 import pl.edu.agh.plonka.bartlomiej.menes.service.OntologyWrapper;
 
 import java.util.*;
@@ -17,6 +14,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Constants.*;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
 public class Complex implements Comparable<Complex> {
 
@@ -187,9 +185,10 @@ public class Complex implements Comparable<Complex> {
 
     public Rule generateRule(String ruleName, Category category, OntologyWrapper ontology) {
         Rule rule = new Rule(ruleName);
-        Variable patientVariable = new Variable("patient", ontology.getClasses().get(PATIENT_CLASS));
+        OntologyClass patientClass = findEntity(PATIENT_CLASS, ontology.getClasses());
+        Variable patientVariable = new Variable("patient", patientClass);
 
-        rule.addDeclarationAtom(new ClassDeclarationAtom<>(ontology.getClasses().get(PATIENT_CLASS), patientVariable));
+        rule.addDeclarationAtom(new ClassDeclarationAtom<>(patientClass, patientVariable));
 
         rule.addHeadAtoms(createLinearAtoms(patientVariable));
         rule.addHeadAtoms(createEntityAtoms(patientVariable));

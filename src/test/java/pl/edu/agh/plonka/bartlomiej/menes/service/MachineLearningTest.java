@@ -3,18 +3,21 @@ package pl.edu.agh.plonka.bartlomiej.menes.service;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
+import org.springframework.util.Assert;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
+import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
+import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class MachineLearningTest {
@@ -72,8 +75,16 @@ public class MachineLearningTest {
     }
 
     @Test
-    public void name() {
+    public void name() throws Throwable {
+        Set<Patient> patients = ontology.getPatients();
+        Set<ObjectProperty> hasDiseaseProperty = ontology.getEntityProperties()
+                .stream()
+                .filter(p -> p.getID().equals("hasDisease"))
+                .collect(toSet());
 
+        Collection<Rule> rules = machineLearning.sequentialCovering(patients, hasDiseaseProperty);
+
+        Assert.notEmpty(rules);
     }
 
     //    @Test

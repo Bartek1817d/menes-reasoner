@@ -37,6 +37,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.semanticweb.owlapi.search.EntitySearcher.getDataPropertyValues;
 import static org.semanticweb.owlapi.search.EntitySearcher.getObjectPropertyValues;
 import static org.slf4j.LoggerFactory.getLogger;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
 public class OntologyWrapper {
 
@@ -54,9 +55,9 @@ public class OntologyWrapper {
     private final SWRLRuleEngine ruleEngine;
     private final SWRLAPIOWLOntology ruleOntology;
     private final SWRLRuleRenderer ruleRenderer;
-    private Map<String, OntologyClass> classes = new HashMap<>();
+    private Set<OntologyClass> classes = new HashSet<>();
     private OWLEntityRemover remover;
-    private Map<String, Entity> entities = new HashMap<>();
+    private Set<Entity> entities = new HashSet<>();
     private Collection<Rule> rules = new ArrayList<>();
     private OntologyProperties properties;
     private Set<Property> stringProperties;
@@ -148,18 +149,15 @@ public class OntologyWrapper {
         property.setMaxValue(max(propertyValues));
     }
 
-    public Map<String, OntologyClass> getClasses() {
+    public Set<OntologyClass> getClasses() {
         return classes;
     }
 
-    public Collection<Entity> getClassInstances(String className) {
-        Entity cls = classes.get(className);
+    public Set<Entity> getClassInstances(String className) {
+        OntologyClass cls = findEntity(className, classes);
         if (cls == null)
-            return emptyList();
-        return entities.values()
-                .stream()
-                .filter(e -> e.getClasses().contains(cls))
-                .collect(toSet());
+            return emptySet();
+        return cls.getInstances();
     }
 
     private Patient getPatient(OWLIndividual patientInd) {
@@ -265,8 +263,8 @@ public class OntologyWrapper {
     }
 
     public void changeLanguage() {
-        classes.values().forEach(Entity::setLanguage);
-        entities.values().forEach(Entity::setLanguage);
+        classes.forEach(Entity::setLanguage);
+        entities.forEach(Entity::setLanguage);
     }
 
     public Patient getInferredPatient(Patient patient) {
@@ -362,7 +360,7 @@ public class OntologyWrapper {
         OWLObjectProperty property = factory.getOWLObjectProperty(propertyName, prefixManager);
         return getObjectPropertyValues(patientInd, property, ontology)
                 .stream()
-                .map(v -> entities.get(renderer.render(v)))
+                .map(v -> findEntity(renderer.render(v), entities))
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
@@ -392,7 +390,7 @@ public class OntologyWrapper {
         OWLObjectProperty property = factory.getOWLObjectProperty(propertyName, prefixManager);
         Set<Entity> inferredEntities = reasoner.getObjectPropertyValues(patientInd, property).getFlattened()
                 .stream()
-                .map(v -> entities.get(renderer.render(v)))
+                .map(v -> findEntity(renderer.render(v), entities))
                 .collect(toSet());
         inferredEntities.removeAll(assertedValues);
         return inferredEntities;
@@ -431,7 +429,7 @@ public class OntologyWrapper {
                                 factory.getOWLNamedIndividual(v.getID(), prefixManager))));
     }
 
-    private void setEntityIndClasses(OWLNamedIndividual entityInd, Collection<Entity> classes) {
+    private void setEntityIndClasses(OWLNamedIndividual entityInd, Set<OntologyClass> classes) {
         for (Entity cls : classes) {
             OWLClass owlClass = factory.getOWLClass(cls.getID(), prefixManager);
             setIndClass(owlClass, entityInd);

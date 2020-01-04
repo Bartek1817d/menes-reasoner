@@ -11,14 +11,16 @@ import pl.edu.agh.plonka.bartlomiej.menes.exception.CreateRuleException;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
 import pl.edu.agh.plonka.bartlomiej.menes.model.OntologyClass;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.*;
+import pl.edu.agh.plonka.bartlomiej.menes.utils.Others;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.slf4j.LoggerFactory.getLogger;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
 public class RulesManager {
 
@@ -46,7 +48,7 @@ public class RulesManager {
         rules.forEach(rule -> ruleOntology.deleteSWRLRule(rule.getName()));
     }
 
-    public Collection<Rule> loadRules(Map<String, OntologyClass> classes, Map<String, Entity> entities) {
+    public Collection<Rule> loadRules(Set<OntologyClass> classes, Set<Entity> entities) {
         Collection<Rule> rules = new ArrayList<>();
         for (SWRLAPIRule swrlRule : ruleOntology.getSWRLRules()) {
             Rule rule = new Rule(swrlRule.getRuleName());
@@ -66,7 +68,7 @@ public class RulesManager {
     }
 
     @SuppressWarnings("unchecked")
-    private AbstractAtom parseSWRLAtom(SWRLAtom swrlAtom, Map<String, OntologyClass> classes, Map<String, Entity> entities) {
+    private AbstractAtom parseSWRLAtom(SWRLAtom swrlAtom, Set<OntologyClass> classes, Set<Entity> entities) {
         String str = swrlAtom.toString();
         Pattern atomPattern = Pattern
                 .compile("^(?<atomType>\\p{Alpha}+)\\(<\\S+#(?<atomID>\\w+)> (?<atomArguments>.+)\\)$");
@@ -93,15 +95,15 @@ public class RulesManager {
 
     private AbstractAtom parseClassAtom(String atomID,
                                         Matcher argumentMatcher,
-                                        Map<String, OntologyClass> classes,
-                                        Map<String, Entity> entities) {
+                                        Set<OntologyClass> classes,
+                                        Set<Entity> entities) {
         if (argumentMatcher.find()) {
             String argumentType = argumentMatcher.group("argumentType");
             String argumentID = argumentMatcher.group("argumentID");
             if (argumentType.equals("Variable"))
-                return new ClassDeclarationAtom<>(classes.get(atomID), new Variable(argumentID));
-            if (entities.containsKey(argumentID))
-                return new ClassDeclarationAtom<>(classes.get(atomID), entities.get(argumentID));
+                return new ClassDeclarationAtom<>(findEntity(atomID, classes), new Variable(argumentID));
+            if (Others.containsEntity(argumentID, entities))
+                return new ClassDeclarationAtom<>(findEntity(atomID, classes), findEntity(argumentID, entities));
         }
         return null;
     }
@@ -109,7 +111,7 @@ public class RulesManager {
     private AbstractAtom parseTwoArgumentsAtom(String atomType,
                                                String atomID,
                                                Matcher argumentMatcher,
-                                               Map<String, Entity> entities) {
+                                               Set<Entity> entities) {
         int i = 0;
         @SuppressWarnings("rawtypes")
         TwoArgumentsAtom atom;
@@ -128,7 +130,7 @@ public class RulesManager {
                 if (argumentType.equals("Variable")) {
                     setAtomArgument(atom, new Variable(argumentID), i);
                 } else if (argumentType.equals("")) {
-                    Entity entity = entities.get(argumentID);
+                    Entity entity = findEntity(argumentID, entities);
                     setAtomArgument(atom, entity, i);
                 }
             } else if (valueType != null && value != null && StringUtils.isNumeric(value)) {
@@ -157,9 +159,7 @@ public class RulesManager {
         }
         if (atom instanceof TwoArgumentsAtom) {
             TwoArgumentsAtom twoArgumentsAtom = (TwoArgumentsAtom) atom;
-            if (twoArgumentsAtom.getArgument1() instanceof Variable && twoArgumentsAtom.getArgument2() instanceof Variable) {
-                return true;
-            }
+            return twoArgumentsAtom.getArgument1() instanceof Variable && twoArgumentsAtom.getArgument2() instanceof Variable;
         }
         return false;
     }
