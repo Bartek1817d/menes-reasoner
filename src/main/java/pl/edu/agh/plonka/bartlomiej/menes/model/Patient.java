@@ -29,10 +29,6 @@ public class Patient extends Entity implements Comparable<Patient> {
 
     private float evaluation;
 
-    public Patient() {
-        super();
-    }
-
     /**
      * Default constructor.
      */

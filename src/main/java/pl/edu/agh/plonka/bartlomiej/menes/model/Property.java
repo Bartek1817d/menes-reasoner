@@ -10,9 +10,6 @@ public class Property extends Entity {
 
     private static final Collection<String> INTEGER_DATA_TYPES = Arrays.asList("unsignedByte");
 
-    public Property() {
-    }
-
     public Property(String id) {
         super(id);
     }

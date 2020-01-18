@@ -4,21 +4,25 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.springframework.util.Assert;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Entity;
-import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
-import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.*;
 import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
-import static java.util.function.Function.identity;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.slf4j.LoggerFactory.getLogger;
+import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
 public class MachineLearningTest {
 
@@ -31,43 +35,82 @@ public class MachineLearningTest {
     private static final String[] DISEASES = {"Cold", "LungCancer", "Chickenpox", "Myocarditis", "Pericarditis"};
     private static final String[] SYMPTOMS = {"Cough", "StabbingChestPain", "Dyspnoea"};
     private static final String[] TESTS = {"EKG", "ChestXRay"};
-    private static final String CLASSES = "Patient";
+//    private static final String CLASSES = "Patient";
+
+    private static final Set<Entity> ENTITIES = mockEntities();
+    private static final Set<OntologyClass> CLASSES = mockClasses();
+
+    private static final Set<Property> STRING_PROPERTIES = mockStringProperties();
+    private static final Set<IntegerProperty> INTEGER_PROPERTIES = mockIntegerProperties();
+    private static final Set<ObjectProperty> OBJECT_PROPERTIES = mockObjectProperties();
+
+    private static final Set<Patient> PATIENTS = mockPatients();
+
+    private static Set<Patient> mockPatients() {
+        Patient patient1 = new Patient("patient1");
+        patient1
+    }
+
+    private static Set<Entity> mockEntities() {
+        Set<Entity> entities = new HashSet<>();
+        entities.addAll(mockEntities(DISEASES));
+        entities.addAll(mockEntities(SYMPTOMS));
+        entities.addAll(mockEntities(TESTS));
+        return entities;
+    }
+
+    private static Set<Entity> mockEntities(String... entities) {
+        return stream(entities).map(Entity::new).collect(toSet());
+    }
+
+    private static Set<OntologyClass> mockClasses() {
+        Set<OntologyClass> ontologyClasses = new HashSet<>();
+        ontologyClasses.add(mockClass("Disease", DISEASES));
+        ontologyClasses.add(mockClass("Symptom", SYMPTOMS));
+        ontologyClasses.add(mockClass("Test", TESTS));
+        return ontologyClasses;
+    }
+
+    private static OntologyClass mockClass(String name, String[] entities) {
+        OntologyClass ontologyClass = new OntologyClass(name);
+        ontologyClass.addInstances(stream(entities).map(e -> findEntity(e, ENTITIES)).collect(toSet()));
+        return ontologyClass;
+    }
+
+    private static Set<Property> mockStringProperties() {
+        Set<Property> properties = new HashSet<>();
+        properties.add(new Property("firstName"));
+        properties.add(new Property("lastName"));
+        return properties;
+    }
+
+    private static Set<IntegerProperty> mockIntegerProperties() {
+        Set<IntegerProperty> properties = new HashSet<>();
+        properties.add(new IntegerProperty("age", 0, 100));
+        properties.add(new IntegerProperty("height", 50, 200));
+        properties.add(new IntegerProperty("weight", 10, 200));
+        return properties;
+    }
+
+    private static Set<ObjectProperty> mockObjectProperties() {
+        Set<ObjectProperty> properties = new HashSet<>();
+        properties.add(new ObjectProperty("hasDisease", singleton(findEntity("Disease", CLASSES))));
+        properties.add(new ObjectProperty("hasSymptom", singleton(findEntity("Symptom", CLASSES))));
+        properties.add(new ObjectProperty("shouldMakeTest", singleton(findEntity("Test", CLASSES))));
+        properties.add(new ObjectProperty("negativeTest", singleton(findEntity("Test", CLASSES))));
+
+        return properties;
+    }
+
 
     private static OntologyWrapper ontology;
+
     private static MachineLearning machineLearning;
-
-    private static Map<String, Entity> mockDiseases() {
-        return mockEntities(DISEASES);
-    }
-
-    private static Map<String, Entity> mockSymptoms() {
-        return mockEntities(SYMPTOMS);
-    }
-
-    private static Map<String, Entity> mockTests() {
-        return mockEntities(TESTS);
-    }
-
-    private static Map<String, Entity> mockTreatments() {
-        return new HashMap<>();
-    }
-
-    private static Map<String, Entity> mockCauses() {
-        return new HashMap<>();
-    }
-
-    private static Map<String, Entity> mockClasses() {
-        return mockEntities(CLASSES);
-    }
-
-    private static Map<String, Entity> mockEntities(String... entities) {
-        return stream(entities).collect(Collectors.toMap(identity(), Entity::new));
-    }
 
     @BeforeClass
     public static void setUp() throws Exception {
         if (MOCK_ONTOLOGY) {
-//            mockOntology();
+            mockOntology();
         } else {
             ontology = new OntologyWrapper(new File("src/test/resources/human_diseases.owl"));
         }
@@ -87,6 +130,14 @@ public class MachineLearningTest {
         Assert.notEmpty(rules);
     }
 
+    private static void mockOntology() {
+        ontology = mock(OntologyWrapper.class);
+        when(ontology.getClasses()).thenReturn(CLASSES);
+        when(ontology.getStringProperties()).thenReturn(STRING_PROPERTIES);
+        when(ontology.getIntegerProperties()).thenReturn(INTEGER_PROPERTIES);
+        when(ontology.getEntityProperties()).thenReturn(OBJECT_PROPERTIES);
+    }
+
     //    @Test
 //    public void testNumericalComplexity() throws Throwable {
 //        PrintWriter results = new PrintWriter(new FileOutputStream(
@@ -104,16 +155,28 @@ public class MachineLearningTest {
 //        results.close();
 //    }
 
-//    @Test
-//    public void testGeneratingRules() throws Throwable {
-//        Set<Patient> patients = new HashSet<>();
-//        patients.add(generatePatient("patient1", 24, "StabbingChestPain", "EKG", "Myocarditis"));
-//        patients.add(generatePatient("patient2", 24, "Dyspnoea", "ChestXRay", "Pericarditis"));
-//        patients.add(generatePatient("patient3", 60, "StabbingChestPain", "ChestXRay", "LungCancer"));
-//
-//        Collection<Rule> rules = machineLearning.sequentialCovering(patients);
-//        assertEquals(3, rules.size());
-//    }
+    @Test
+    public void testGeneratingRules() throws Throwable {
+        Set<Patient> patients = new HashSet<>();
+        patients.add(generatePatient("patient1", 24, "StabbingChestPain", "EKG", "Myocarditis"));
+        patients.add(generatePatient("patient2", 24, "Dyspnoea", "ChestXRay", "Pericarditis"));
+        patients.add(generatePatient("patient3", 60, "StabbingChestPain", "ChestXRay", "LungCancer"));
+
+        HashSet<ObjectProperty> predicateCategories = new HashSet<>();
+
+        Collection<Rule> rules = machineLearning.sequentialCovering(patients);
+        assertEquals(3, rules.size());
+    }
+
+
+    private Patient generatePatient(String patientId, Integer age, String symptom, String negativeTest, String disease) {
+        Patient patient = new Patient(patientId);
+        patient.setIntegerProperty("age", age);
+        patient.setEntityProperty("hasSymptom", findEntity(symptom, ENTITIES));
+        patient.setEntityProperty("negativeTest", findEntity(negativeTest, ENTITIES));
+        patient.setEntityProperty("hasDisease", findEntity(disease, ENTITIES));
+        return patient;
+    }
 //
 //    private Set<Patient> generatePatients(int count) {
 //        Set<Patient> patients = new HashSet<>(count);
@@ -138,14 +201,6 @@ public class MachineLearningTest {
 //        return patient;
 //    }
 //
-//    private Patient generatePatient(String patientId, Integer age, String symptom, String negativeTest, String disease) {
-//        Patient patient = new Patient(patientId);
-//        patient.setAge(age);
-//        patient.setSymptoms(singleton(ontology.getSymptoms().get(symptom)));
-//        patient.setNegativeTests(singleton(ontology.getTests().get(negativeTest)));
-//        patient.setDiseases(singleton(ontology.getDiseases().get(disease)));
-//        return patient;
-//    }
 //
 //    private Collection<Entity> selectRandomSubset(Collection<Entity> set) {
 //        List<Entity> list = new ArrayList<>(set);

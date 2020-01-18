@@ -22,9 +22,6 @@ public class Entity {
     private Map<String, String> languageLabelMap = new HashMap<>();
     private Map<String, String> languageCommentMap = new HashMap<>();
 
-    public Entity() {
-    }
-
     public Entity(String id) {
         this.id = id;
     }

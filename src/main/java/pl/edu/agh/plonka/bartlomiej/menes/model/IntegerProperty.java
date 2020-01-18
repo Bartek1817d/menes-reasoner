@@ -5,9 +5,6 @@ public class IntegerProperty extends Property {
     private Integer minValue;
     private Integer maxValue;
 
-    public IntegerProperty() {
-    }
-
     public IntegerProperty(String id) {
         super(id);
     }

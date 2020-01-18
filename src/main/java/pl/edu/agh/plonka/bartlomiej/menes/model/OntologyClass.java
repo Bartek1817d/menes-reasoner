@@ -8,9 +8,6 @@ public class OntologyClass extends Entity {
 
     private final Set<Entity> instances = new HashSet<>();
 
-    public OntologyClass() {
-    }
-
     public OntologyClass(String id) {
         super(id);
     }

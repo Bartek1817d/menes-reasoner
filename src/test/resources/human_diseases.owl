@@ -74,9 +74,6 @@
         <NamedIndividual IRI="#Herbapect"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#Nausea"/>
-    </Declaration>
-    <Declaration>
         <NamedIndividual IRI="#Hemoptysis"/>
     </Declaration>
     <Declaration>
@@ -84,6 +81,9 @@
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#LifestyleChange"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Nausea"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#BlurryVision"/>
@@ -146,10 +146,10 @@
         <NamedIndividual IRI="#SputumCulture"/>
     </Declaration>
     <Declaration>
-        <Class IRI="#OtherTesting"/>
+        <DataProperty IRI="#patientDataProperty"/>
     </Declaration>
     <Declaration>
-        <DataProperty IRI="#patientDataProperty"/>
+        <Class IRI="#OtherTesting"/>
     </Declaration>
     <Declaration>
         <Class IRI="#DrugTreatment"/>
@@ -158,13 +158,13 @@
         <NamedIndividual IRI="#Vomiting"/>
     </Declaration>
     <Declaration>
+        <Class IRI="#LifestypeCause"/>
+    </Declaration>
+    <Declaration>
         <NamedIndividual IRI="#Fever"/>
     </Declaration>
     <Declaration>
         <DataProperty IRI="#lastName"/>
-    </Declaration>
-    <Declaration>
-        <Class IRI="#LifestypeCause"/>
     </Declaration>
     <Declaration>
         <DataProperty IRI="#height"/>
@@ -218,13 +218,13 @@
         <ObjectProperty IRI="#diagnosedBy"/>
     </Declaration>
     <Declaration>
+        <NamedIndividual IRI="#ToxicSubstances"/>
+    </Declaration>
+    <Declaration>
         <Class IRI="#SkinDisease"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#ColorectalCancer"/>
-    </Declaration>
-    <Declaration>
-        <NamedIndividual IRI="#ToxicSubstances"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#Hoarseness"/>
@@ -323,10 +323,10 @@
         <Class IRI="#Disease"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#Dizziness"/>
+        <Class IRI="#AntiparasiticMedicine"/>
     </Declaration>
     <Declaration>
-        <Class IRI="#AntiparasiticMedicine"/>
+        <NamedIndividual IRI="#Dizziness"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#PersonalHygene"/>
@@ -359,16 +359,16 @@
         <NamedIndividual IRI="#MagneticResonance"/>
     </Declaration>
     <Declaration>
-        <ObjectProperty IRI="#shouldMakeTest"/>
-    </Declaration>
-    <Declaration>
         <NamedIndividual IRI="#Cold"/>
     </Declaration>
     <Declaration>
-        <DataProperty IRI="#temperatureLevel"/>
+        <ObjectProperty IRI="#shouldMakeTest"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#Dyspnoea"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#temperatureLevel"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#EKG"/>
@@ -413,10 +413,10 @@
         <NamedIndividual IRI="#Albendazole"/>
     </Declaration>
     <Declaration>
-        <Class IRI="#RespiratorySystemDisease"/>
+        <NamedIndividual IRI="#NightSweats"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#NightSweats"/>
+        <Class IRI="#RespiratorySystemDisease"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#Blindness"/>
@@ -458,22 +458,22 @@
         <NamedIndividual IRI="#Inflammation"/>
     </Declaration>
     <Declaration>
-        <Class IRI="#Other"/>
+        <NamedIndividual IRI="#Mebendazole"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#Chemotherapy"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#Mebendazole"/>
+        <Class IRI="#Other"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#Ovice"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#SeeingDisorders"/>
+        <NamedIndividual IRI="#Boil"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#Boil"/>
+        <NamedIndividual IRI="#SeeingDisorders"/>
     </Declaration>
     <Declaration>
         <Class IRI="#Patient"/>
@@ -575,10 +575,10 @@
         <NamedIndividual IRI="#Stroke"/>
     </Declaration>
     <Declaration>
-        <Class IRI="#Symptom"/>
+        <NamedIndividual IRI="#LossOfConsciousness"/>
     </Declaration>
     <Declaration>
-        <NamedIndividual IRI="#LossOfConsciousness"/>
+        <Class IRI="#Symptom"/>
     </Declaration>
     <Declaration>
         <NamedIndividual IRI="#Pyrantel"/>
@@ -1233,6 +1233,11 @@
         <Class IRI="#OtherSymptom"/>
         <NamedIndividual IRI="#Weakness"/>
     </ClassAssertion>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="#hasDisease"/>
+        <NamedIndividual IRI="#Bartek"/>
+        <NamedIndividual IRI="#HumanWorm"/>
+    </ObjectPropertyAssertion>
     <ObjectPropertyAssertion>
         <ObjectProperty IRI="#hasSymptom"/>
         <NamedIndividual IRI="#Bartek"/>

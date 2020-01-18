@@ -9,11 +9,13 @@ public class ObjectProperty extends Property {
 
     private final Set<OntologyClass> ranges = new HashSet<>();
 
-    public ObjectProperty() {
-    }
-
     public ObjectProperty(String id) {
         super(id);
+    }
+
+    public ObjectProperty(String id, Collection<OntologyClass> ranges) {
+        super(id);
+        this.ranges.addAll(ranges);
     }
 
     public Set<OntologyClass> getRanges() {
