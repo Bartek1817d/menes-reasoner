@@ -56,7 +56,7 @@ public class Complex implements Comparable<Complex> {
         return entitySelectors.entrySet()
                 .stream()
                 .map(entry -> createEntityAtoms(
-                        new Variable('_' + entry.getKey()),
+                        patientVariable,
                         entry.getKey(),
                         entry.getValue()
                 ))
@@ -190,8 +190,8 @@ public class Complex implements Comparable<Complex> {
 
         rule.addDeclarationAtom(new ClassDeclarationAtom<>(patientClass, patientVariable));
 
-        rule.addHeadAtoms(createLinearAtoms(patientVariable));
-        rule.addHeadAtoms(createEntityAtoms(patientVariable));
+        rule.addBodyAtoms(createLinearAtoms(patientVariable));
+        rule.addBodyAtoms(createEntityAtoms(patientVariable));
 
         rule.addHeadAtoms(createEntityAtoms(patientVariable, category.getPredicate(), singleton(category.getEntity())));
 

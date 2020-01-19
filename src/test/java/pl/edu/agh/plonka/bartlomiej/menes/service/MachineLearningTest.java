@@ -29,7 +29,7 @@ public class MachineLearningTest {
     private static final Logger LOG = getLogger(MachineLearningTest.class);
 
     private static final Random RAND = new Random(currentTimeMillis());
-    private static final Boolean MOCK_ONTOLOGY = false;
+    private static final Boolean MOCK_ONTOLOGY = true;
     private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
     private static final String[] DISEASES = {"Cold", "LungCancer", "Chickenpox", "Myocarditis", "Pericarditis"};
@@ -43,13 +43,6 @@ public class MachineLearningTest {
     private static final Set<Property> STRING_PROPERTIES = mockStringProperties();
     private static final Set<IntegerProperty> INTEGER_PROPERTIES = mockIntegerProperties();
     private static final Set<ObjectProperty> OBJECT_PROPERTIES = mockObjectProperties();
-
-    private static final Set<Patient> PATIENTS = mockPatients();
-
-    private static Set<Patient> mockPatients() {
-        Patient patient1 = new Patient("patient1");
-        patient1
-    }
 
     private static Set<Entity> mockEntities() {
         Set<Entity> entities = new HashSet<>();
@@ -68,6 +61,7 @@ public class MachineLearningTest {
         ontologyClasses.add(mockClass("Disease", DISEASES));
         ontologyClasses.add(mockClass("Symptom", SYMPTOMS));
         ontologyClasses.add(mockClass("Test", TESTS));
+        ontologyClasses.add(new OntologyClass("Patient"));
         return ontologyClasses;
     }
 
@@ -162,9 +156,9 @@ public class MachineLearningTest {
         patients.add(generatePatient("patient2", 24, "Dyspnoea", "ChestXRay", "Pericarditis"));
         patients.add(generatePatient("patient3", 60, "StabbingChestPain", "ChestXRay", "LungCancer"));
 
-        HashSet<ObjectProperty> predicateCategories = new HashSet<>();
+        Set<ObjectProperty> predicateCategories = singleton(findEntity("hasDisease", OBJECT_PROPERTIES));
 
-        Collection<Rule> rules = machineLearning.sequentialCovering(patients);
+        Collection<Rule> rules = machineLearning.sequentialCovering(patients, predicateCategories);
         assertEquals(3, rules.size());
     }
 
