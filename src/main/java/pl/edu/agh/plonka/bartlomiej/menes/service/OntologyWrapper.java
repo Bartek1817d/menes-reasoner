@@ -28,8 +28,6 @@ import uk.ac.manchester.cs.owl.owlapi.OWLLiteralImplPlain;
 
 import java.io.File;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static java.util.Collections.*;
@@ -285,25 +283,6 @@ public class OntologyWrapper {
                         getPatientInferredObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))));
 
         return patient;
-    }
-
-    private void addEntityToPatient(TwoArgumentsAtom atom, Map<String, Entity> variables, Method patientMethod) {
-        String pName = ((Variable) atom.getArgument1()).getName();
-        Patient p = (Patient) variables.get(pName);
-        try {
-            patientMethod.invoke(p, atom.getArgument2());
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setPatientAge(Rule rule, TwoArgumentsAtom atom, Map<String, Entity> variables) {
-        Variable patientVariable = (Variable) atom.getArgument1();
-        Variable ageVariable = (Variable) atom.getArgument2();
-        Patient p = (Patient) variables.get(patientVariable.getName());
-        Range<Integer> ageRange = calculateAgeRange(rule, ageVariable);
-
-//        p.setAge(selectNumberFromRange(ageRange));
     }
 
     private Range<Integer> calculateAgeRange(Rule rule, Variable ageVariable) {
