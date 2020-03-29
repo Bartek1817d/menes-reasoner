@@ -20,11 +20,11 @@ public class Patient extends Entity implements Comparable<Patient> {
     private static final Logger LOG = getLogger(Patient.class);
 
     private final Map<String, Set<String>> stringProperties = new HashMap<>();
-    private final Map<String, Set<Integer>> integerProperties = new HashMap<>();
+    private final Map<String, Set<Float>> numericProperties = new HashMap<>();
     private final Map<String, Set<Entity>> entityProperties = new HashMap<>();
 
     private final Map<String, Set<String>> inferredStringProperties = new HashMap<>();
-    private final Map<String, Set<Integer>> inferredIntegerProperties = new HashMap<>();
+    private final Map<String, Set<Float>> inferredNumericProperties = new HashMap<>();
     private final Map<String, Set<Entity>> inferredEntityProperties = new HashMap<>();
 
     private float evaluation;
@@ -84,8 +84,8 @@ public class Patient extends Entity implements Comparable<Patient> {
         return getProperty(stringProperties, propertyName);
     }
 
-    public Integer getIntegerProperty(String propertyName) {
-        return getProperty(integerProperties, propertyName);
+    public Float getNumericProperty(String propertyName) {
+        return getProperty(numericProperties, propertyName);
     }
 
     public Entity getEntityProperty(String propertyName) {
@@ -96,8 +96,8 @@ public class Patient extends Entity implements Comparable<Patient> {
         setProperty(stringProperties, propertyName, value);
     }
 
-    public void setIntegerProperty(String propertyName, Integer value) {
-        setProperty(integerProperties, propertyName, value);
+    public void setNumericProperty(String propertyName, Float value) {
+        setProperty(numericProperties, propertyName, value);
     }
 
     public void setEntityProperty(String propertyName, Entity value) {
@@ -108,8 +108,8 @@ public class Patient extends Entity implements Comparable<Patient> {
         setProperties(stringProperties, propertyName, values);
     }
 
-    public void setIntegerProperties(String propertyName, Collection<Integer> values) {
-        setProperties(integerProperties, propertyName, values);
+    public void setNumericProperties(String propertyName, Collection<Float> values) {
+        setProperties(numericProperties, propertyName, values);
     }
 
     public void setEntityProperties(String propertyName, Collection<Entity> values) {
@@ -145,12 +145,12 @@ public class Patient extends Entity implements Comparable<Patient> {
         return stringProperties.get(propertyName);
     }
 
-    public Map<String, Set<Integer>> getIntegerProperties() {
-        return integerProperties;
+    public Map<String, Set<Float>> getNumericProperties() {
+        return numericProperties;
     }
 
-    public Set<Integer> getIntegerProperties(String propertyName) {
-        return integerProperties.get(propertyName);
+    public Set<Float> getFloatProperties(String propertyName) {
+        return numericProperties.get(propertyName);
     }
 
     public Map<String, Set<Entity>> getEntityProperties() {
@@ -173,12 +173,12 @@ public class Patient extends Entity implements Comparable<Patient> {
         return inferredStringProperties.get(propertyName);
     }
 
-    public Map<String, Set<Integer>> getInferredIntegerProperties() {
-        return inferredIntegerProperties;
+    public Map<String, Set<Float>> getInferredNumericProperties() {
+        return inferredNumericProperties;
     }
 
-    public Set<Integer> getInferredIntegerProperties(String propertyName) {
-        return inferredIntegerProperties.get(propertyName);
+    public Set<Float> getInferredNumericProperties(String propertyName) {
+        return inferredNumericProperties.get(propertyName);
     }
 
     public Map<String, Set<Entity>> getInferredEntityProperties() {
@@ -193,8 +193,8 @@ public class Patient extends Entity implements Comparable<Patient> {
         setProperties(inferredStringProperties, propertyName, values);
     }
 
-    public void setInferredIntegerProperties(String propertyName, Collection<Integer> values) {
-        setProperties(inferredIntegerProperties, propertyName, values);
+    public void setInferredNumericProperties(String propertyName, Collection<Float> values) {
+        setProperties(inferredNumericProperties, propertyName, values);
     }
 
     public void setInferredEntityProperties(String propertyName, Collection<Entity> values) {

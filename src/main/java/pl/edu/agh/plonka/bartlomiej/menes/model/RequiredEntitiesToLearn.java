@@ -24,7 +24,7 @@ public class RequiredEntitiesToLearn {
     }
 
     private boolean invalidIntegerProperties(Patient patient) {
-        return invalidProperties(integerProperties, patient.getIntegerProperties(), patient.getInferredIntegerProperties());
+        return invalidProperties(integerProperties, patient.getNumericProperties(), patient.getInferredNumericProperties());
     }
 
     private boolean invalidEntityProperties(Patient patient) {

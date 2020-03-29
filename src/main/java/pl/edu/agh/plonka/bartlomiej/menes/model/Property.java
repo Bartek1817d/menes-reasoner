@@ -8,13 +8,13 @@ import static java.util.Collections.disjoint;
 
 public class Property extends Entity {
 
-    private static final Collection<String> INTEGER_DATA_TYPES = Arrays.asList("unsignedByte");
+    private static final Collection<String> INTEGER_DATA_TYPES = Arrays.asList("unsignedByte", "decimal", "double", "float");
 
     public Property(String id) {
         super(id);
     }
 
-    public static boolean isIntegerProperty(Set<String> rangeTypes) {
+    public static boolean isNumericProperty(Set<String> rangeTypes) {
         return !disjoint(rangeTypes, INTEGER_DATA_TYPES);
     }
 

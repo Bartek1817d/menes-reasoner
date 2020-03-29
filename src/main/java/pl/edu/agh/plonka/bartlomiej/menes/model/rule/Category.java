@@ -5,6 +5,8 @@ import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
 
 import java.util.Set;
 
+import static java.lang.String.format;
+
 public class Category {
 
     private final Entity entity;
@@ -34,5 +36,10 @@ public class Category {
 
     public String getPredicate() {
         return predicate;
+    }
+
+    @Override
+    public String toString() {
+        return format("%s=%s", predicate, entity);
     }
 }

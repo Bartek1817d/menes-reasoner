@@ -14,7 +14,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
-import static pl.edu.agh.plonka.bartlomiej.menes.model.Property.isIntegerProperty;
+import static pl.edu.agh.plonka.bartlomiej.menes.model.Property.isNumericProperty;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
 class EntitiesLoader {
@@ -49,10 +49,10 @@ class EntitiesLoader {
                 .collect(toSet());
     }
 
-    public Set<IntegerProperty> loadIntegerProperties() {
+    public Set<NumericProperty> loadNumericProperties() {
         return ontology.getDataPropertiesInSignature()
                 .stream()
-                .map(this::loadIntegerProperty)
+                .map(this::loadNumericProperty)
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
@@ -73,14 +73,14 @@ class EntitiesLoader {
                 .collect(toSet());
     }
 
-    private IntegerProperty loadIntegerProperty(OWLDataProperty owlDataProperty) {
+    private NumericProperty loadNumericProperty(OWLDataProperty owlDataProperty) {
         String propertyName = renderer.render(owlDataProperty);
         if (!validateDataProperty(propertyName, owlDataProperty))
             return null;
         Set<String> rangeTypes = getDataPropertyRangeTypes(owlDataProperty);
-        if (!isIntegerProperty(rangeTypes))
+        if (!isNumericProperty(rangeTypes))
             return null;
-        return new IntegerProperty(propertyName);
+        return new NumericProperty(propertyName);
     }
 
     private Property loadStringProperty(OWLDataProperty owlDataProperty) {
@@ -88,7 +88,7 @@ class EntitiesLoader {
         if (!validateDataProperty(propertyName, owlDataProperty))
             return null;
         Set<String> rangeTypes = getDataPropertyRangeTypes(owlDataProperty);
-        if (isIntegerProperty(rangeTypes))
+        if (isNumericProperty(rangeTypes))
             return null;
         return new Property(propertyName);
     }

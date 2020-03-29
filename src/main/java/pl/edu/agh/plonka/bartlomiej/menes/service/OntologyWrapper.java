@@ -59,7 +59,7 @@ public class OntologyWrapper {
     private Collection<Rule> rules = new ArrayList<>();
     private OntologyProperties properties;
     private Set<Property> stringProperties;
-    private Set<IntegerProperty> integerProperties;
+    private Set<NumericProperty> numericProperties;
     private Set<ObjectProperty> entityProperties;
     private Set<Patient> patients;
 
@@ -124,7 +124,7 @@ public class OntologyWrapper {
     private void loadData() {
         classes = entitiesLoader.loadClasses();
         entities = entitiesLoader.loadInstances(classes);
-        integerProperties = entitiesLoader.loadIntegerProperties();
+        numericProperties = entitiesLoader.loadNumericProperties();
         stringProperties = entitiesLoader.loadStringProperties();
         entityProperties = entitiesLoader.loadObjectProperties(classes);
         patients = getPatients();
@@ -133,13 +133,13 @@ public class OntologyWrapper {
     }
 
     private void fillIntegerPropertiesRanges() {
-        integerProperties.forEach(this::fillIntegerPropertyRange);
+        numericProperties.forEach(this::fillIntegerPropertyRange);
     }
 
-    private void fillIntegerPropertyRange(IntegerProperty property) {
-        Set<Integer> propertyValues = patients
+    private void fillIntegerPropertyRange(NumericProperty property) {
+        Set<Float> propertyValues = patients
                 .stream()
-                .map(p -> p.getIntegerProperties(property.getID()))
+                .map(p -> p.getFloatProperties(property.getID()))
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .collect(toSet());
@@ -164,8 +164,8 @@ public class OntologyWrapper {
         stringProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setStringProperties(propertyName, getPatientStringProperties(patientInd, propertyName))
         );
-        integerProperties.stream().map(Entity::getID).forEach(propertyName ->
-                patient.setIntegerProperties(propertyName, getPatientIntegerProperties(patientInd, propertyName))
+        numericProperties.stream().map(Entity::getID).forEach(propertyName ->
+                patient.setNumericProperties(propertyName, getPatientNumericProperties(patientInd, propertyName))
         );
         entityProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setEntityProperties(propertyName, getPatientObjectProperties(patientInd, propertyName))
@@ -183,8 +183,8 @@ public class OntologyWrapper {
         stringProperties.stream().map(Entity::getID).forEach(propertyName ->
                 setPatientIndStringProperty(patientInd, propertyName, patient.getStringProperties(propertyName))
         );
-        integerProperties.stream().map(Entity::getID).forEach(propertyName ->
-                setPatientIndIntegerProperty(patientInd, propertyName, patient.getIntegerProperties(propertyName))
+        numericProperties.stream().map(Entity::getID).forEach(propertyName ->
+                setPatientIndNumericProperty(patientInd, propertyName, patient.getFloatProperties(propertyName))
         );
         entityProperties.stream().map(Entity::getID).forEach(propertyName ->
                 setPatientIndObjectProperty(patientInd, propertyName, patient.getEntityProperties(propertyName))
@@ -269,10 +269,10 @@ public class OntologyWrapper {
         reasoner.flush();
         OWLNamedIndividual patientInd = factory.getOWLNamedIndividual(patient.getID(), prefixManager);
 
-        integerProperties.stream().map(Entity::getID).forEach(propertyName ->
-                patient.setInferredIntegerProperties(
+        numericProperties.stream().map(Entity::getID).forEach(propertyName ->
+                patient.setInferredNumericProperties(
                         propertyName,
-                        getPatientInferredIntegerProperty(patientInd, propertyName, patient.getIntegerProperties(propertyName))));
+                        getPatientInferredNumericProperty(patientInd, propertyName, patient.getFloatProperties(propertyName))));
         stringProperties.stream().map(Entity::getID).forEach(propertyName ->
                 patient.setInferredStringProperties(
                         propertyName,
@@ -326,12 +326,12 @@ public class OntologyWrapper {
                 .collect(toSet());
     }
 
-    private Collection<Integer> getPatientIntegerProperties(OWLIndividual patientInd, String propertyName) {
+    private Collection<Float> getPatientNumericProperties(OWLIndividual patientInd, String propertyName) {
         OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
         return getDataPropertyValues(patientInd, property, ontology)
                 .stream()
                 .map(renderer::render)
-                .map(Integer::parseInt)
+                .map(Float::parseFloat)
                 .collect(toSet());
     }
 
@@ -344,12 +344,12 @@ public class OntologyWrapper {
                 .collect(toSet());
     }
 
-    private Collection<Integer> getPatientInferredIntegerProperty(OWLNamedIndividual patientInd, String propertyName, Collection<Integer> assertedValues) {
+    private Collection<Float> getPatientInferredNumericProperty(OWLNamedIndividual patientInd, String propertyName, Collection<Float> assertedValues) {
         OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
-        Set<Integer> inferredEntities = reasoner.getDataPropertyValues(patientInd, property)
+        Set<Float> inferredEntities = reasoner.getDataPropertyValues(patientInd, property)
                 .stream()
                 .map(renderer::render)
-                .map(Integer::parseInt)
+                .map(Float::parseFloat)
                 .collect(toSet());
         inferredEntities.removeAll(assertedValues);
         return inferredEntities;
@@ -385,7 +385,7 @@ public class OntologyWrapper {
                         factory.getOWLDataPropertyAssertionAxiom(property, patientInd, v)));
     }
 
-    private void setPatientIndIntegerProperty(OWLIndividual patientInd, String propertyName, Collection<Integer> values) {
+    private void setPatientIndNumericProperty(OWLIndividual patientInd, String propertyName, Collection<Float> values) {
         OWLDataProperty property = factory.getOWLDataProperty(propertyName, prefixManager);
         values
                 .stream()
@@ -450,8 +450,8 @@ public class OntologyWrapper {
         return stringProperties;
     }
 
-    public Set<IntegerProperty> getIntegerProperties() {
-        return integerProperties;
+    public Set<NumericProperty> getNumericProperties() {
+        return numericProperties;
     }
 
     public Set<ObjectProperty> getEntityProperties() {

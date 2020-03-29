@@ -20,7 +20,7 @@ public class Complex implements Comparable<Complex> {
 
     private static final Logger LOG = getLogger(Complex.class);
 
-    private Map<String, LinearSelector<Integer>> linearSelectors = new HashMap<>();
+    private Map<String, LinearSelector<Float>> numericSelectors = new HashMap<>();
     private Map<String, EntitiesSelector> entitySelectors = new HashMap<>();
 
     private Float evaluation;
@@ -30,7 +30,7 @@ public class Complex implements Comparable<Complex> {
         Complex resultComplex = new Complex();
 
         resultComplex.entitySelectors = mergeMaps(complex1.entitySelectors, complex2.entitySelectors, (s1, s2) -> (EntitiesSelector) setSelector(s1, s2));
-        resultComplex.linearSelectors = mergeMaps(complex1.linearSelectors, complex2.linearSelectors, (s1, s2) -> (LinearSelector<Integer>) setSelector(s1, s2));
+        resultComplex.numericSelectors = mergeMaps(complex1.numericSelectors, complex2.numericSelectors, (s1, s2) -> (LinearSelector<Float>) setSelector(s1, s2));
 
         return resultComplex;
     }
@@ -72,7 +72,7 @@ public class Complex implements Comparable<Complex> {
     }
 
     private static Collection<AbstractAtom> createLinearAtoms(Variable linearVariable, Variable patientVariable, String propertyName,
-                                                              LinearSelector<Integer> linearSelector) {
+                                                              LinearSelector<Float> linearSelector) {
         if (linearSelector == null)
             return Collections.emptyList();
 
@@ -83,35 +83,23 @@ public class Complex implements Comparable<Complex> {
         return atoms;
     }
 
-    private Collection<AbstractAtom> createLinearAtoms(Variable patientVariable) {
-        return linearSelectors.entrySet()
-                .stream()
-                .map(entry -> createLinearAtoms(
-                        new Variable('_' + entry.getKey()),
-                        patientVariable,
-                        entry.getKey(),
-                        entry.getValue()))
-                .flatMap(Collection::stream)
-                .collect(toList());
-    }
-
-    private static Collection<AbstractAtom> createLinearAtoms(Variable linearVariable, LinearSelector<Integer> linearSelector) {
+    private static Collection<AbstractAtom> createLinearAtoms(Variable linearVariable, LinearSelector<Float> linearSelector) {
         ArrayList<AbstractAtom> atoms = new ArrayList<>();
         if (linearSelector.hasLowerBound() && linearSelector.hasUpperBound()
                 && linearSelector.lowerEndpoint().equals(linearSelector.upperEndpoint())) {
-            TwoArgumentsAtom<Variable, Integer> equalAtom = new TwoArgumentsAtom<>(
+            TwoArgumentsAtom<Variable, Float> equalAtom = new TwoArgumentsAtom<>(
                     EQUAL_PROPERTY, SWRLB_PREFIX, linearVariable, linearSelector.lowerEndpoint());
             atoms.add(equalAtom);
         } else {
             if (linearSelector.hasLowerBound()) {
                 switch (linearSelector.lowerBoundType()) {
                     case OPEN:
-                        TwoArgumentsAtom<Variable, Integer> greaterThanAtom = new TwoArgumentsAtom<>(
+                        TwoArgumentsAtom<Variable, Float> greaterThanAtom = new TwoArgumentsAtom<>(
                                 GREATER_THAN_PROPERTY, SWRLB_PREFIX, linearVariable, linearSelector.lowerEndpoint());
                         atoms.add(greaterThanAtom);
                         break;
                     case CLOSED:
-                        TwoArgumentsAtom<Variable, Integer> atLeastAtom = new TwoArgumentsAtom<>(
+                        TwoArgumentsAtom<Variable, Float> atLeastAtom = new TwoArgumentsAtom<>(
                                 GREATER_THAN_OR_EQUAL_PROPERTY, SWRLB_PREFIX, linearVariable, linearSelector.lowerEndpoint());
                         atoms.add(atLeastAtom);
                         break;
@@ -120,12 +108,12 @@ public class Complex implements Comparable<Complex> {
             if (linearSelector.hasUpperBound()) {
                 switch (linearSelector.upperBoundType()) {
                     case OPEN:
-                        TwoArgumentsAtom<Variable, Integer> lessThanAtom = new TwoArgumentsAtom<>(
+                        TwoArgumentsAtom<Variable, Float> lessThanAtom = new TwoArgumentsAtom<>(
                                 LESS_THAN_PROPERTY, SWRLB_PREFIX, linearVariable, linearSelector.upperEndpoint());
                         atoms.add(lessThanAtom);
                         break;
                     case CLOSED:
-                        TwoArgumentsAtom<Variable, Integer> atMostAtom = new TwoArgumentsAtom<>(
+                        TwoArgumentsAtom<Variable, Float> atMostAtom = new TwoArgumentsAtom<>(
                                 LESS_THAN_OR_EQUAL_PROPERTY, SWRLB_PREFIX, linearVariable, linearSelector.upperEndpoint());
                         atoms.add(atMostAtom);
                         break;
@@ -133,6 +121,18 @@ public class Complex implements Comparable<Complex> {
             }
         }
         return atoms;
+    }
+
+    private Collection<AbstractAtom> createLinearAtoms(Variable patientVariable) {
+        return numericSelectors.entrySet()
+                .stream()
+                .map(entry -> createLinearAtoms(
+                        new Variable('_' + entry.getKey()),
+                        patientVariable,
+                        entry.getKey(),
+                        entry.getValue()))
+                .flatMap(Collection::stream)
+                .collect(toList());
     }
 
     public Float getEvaluation() {
@@ -148,8 +148,8 @@ public class Complex implements Comparable<Complex> {
             if (!complex.entitySelectors.containsKey(entry.getKey()) || !contains(entry.getValue(), complex.entitySelectors.get(entry.getKey())))
                 return false;
         }
-        for (Map.Entry<String, LinearSelector<Integer>> entry : linearSelectors.entrySet()) {
-            if (!complex.linearSelectors.containsKey(entry.getKey()) || !contains(entry.getValue(), complex.linearSelectors.get(entry.getKey())))
+        for (Map.Entry<String, LinearSelector<Float>> entry : numericSelectors.entrySet()) {
+            if (!complex.numericSelectors.containsKey(entry.getKey()) || !contains(entry.getValue(), complex.numericSelectors.get(entry.getKey())))
                 return false;
         }
         return true;
@@ -168,8 +168,8 @@ public class Complex implements Comparable<Complex> {
             if (!covers(entry.getValue(), patient.getEntityProperties(entry.getKey())))
                 return false;
         }
-        for (Map.Entry<String, LinearSelector<Integer>> entry : linearSelectors.entrySet()) {
-            if (!covers(entry.getValue(), patient.getIntegerProperty(entry.getKey())))
+        for (Map.Entry<String, LinearSelector<Float>> entry : numericSelectors.entrySet()) {
+            if (!covers(entry.getValue(), patient.getNumericProperty(entry.getKey())))
                 return false;
         }
         return true;
@@ -179,7 +179,7 @@ public class Complex implements Comparable<Complex> {
         return selector == null || selector.covers(entities);
     }
 
-    private boolean covers(Selector<Integer> selector, Integer entity) {
+    private boolean covers(Selector<Float> selector, Float entity) {
         return selector == null || selector.covers(entity);
     }
 
@@ -203,11 +203,12 @@ public class Complex implements Comparable<Complex> {
         StringBuilder str = new StringBuilder();
         BiConsumer<String, Object> format = (property, selector) -> {
             str.append(property);
-            str.append(": \n\t");
+            str.append(": ");
             str.append(selector);
+            str.append("\n");
         };
         entitySelectors.forEach(format);
-        linearSelectors.forEach(format);
+        numericSelectors.forEach(format);
 
         return str.toString();
     }
@@ -222,8 +223,8 @@ public class Complex implements Comparable<Complex> {
         entitySelectors.put(property.getID(), selector);
     }
 
-    public void setIntegerSelector(IntegerProperty property, LinearSelector<Integer> selector) {
-        linearSelectors.put(property.getID(), selector);
+    public void setNumericSelector(NumericProperty property, LinearSelector<Float> selector) {
+        numericSelectors.put(property.getID(), selector);
     }
 
     private static <T, U> Map<T, U> mergeMaps(Map<T, U> map1, Map<T, U> map2, BinaryOperator<U> conflictResolver) {

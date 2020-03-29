@@ -41,7 +41,7 @@ public class MachineLearningTest {
     private static final Set<OntologyClass> CLASSES = mockClasses();
 
     private static final Set<Property> STRING_PROPERTIES = mockStringProperties();
-    private static final Set<IntegerProperty> INTEGER_PROPERTIES = mockIntegerProperties();
+    private static final Set<NumericProperty> INTEGER_PROPERTIES = mockIntegerProperties();
     private static final Set<ObjectProperty> OBJECT_PROPERTIES = mockObjectProperties();
 
     private static Set<Entity> mockEntities() {
@@ -78,11 +78,11 @@ public class MachineLearningTest {
         return properties;
     }
 
-    private static Set<IntegerProperty> mockIntegerProperties() {
-        Set<IntegerProperty> properties = new HashSet<>();
-        properties.add(new IntegerProperty("age", 0, 100));
-        properties.add(new IntegerProperty("height", 50, 200));
-        properties.add(new IntegerProperty("weight", 10, 200));
+    private static Set<NumericProperty> mockIntegerProperties() {
+        Set<NumericProperty> properties = new HashSet<>();
+        properties.add(new NumericProperty("age", 0f, 100f));
+        properties.add(new NumericProperty("height", 50f, 200f));
+        properties.add(new NumericProperty("weight", 10f, 200f));
         return properties;
     }
 
@@ -128,7 +128,7 @@ public class MachineLearningTest {
         ontology = mock(OntologyWrapper.class);
         when(ontology.getClasses()).thenReturn(CLASSES);
         when(ontology.getStringProperties()).thenReturn(STRING_PROPERTIES);
-        when(ontology.getIntegerProperties()).thenReturn(INTEGER_PROPERTIES);
+        when(ontology.getNumericProperties()).thenReturn(INTEGER_PROPERTIES);
         when(ontology.getEntityProperties()).thenReturn(OBJECT_PROPERTIES);
     }
 
@@ -152,9 +152,9 @@ public class MachineLearningTest {
     @Test
     public void testGeneratingRules() throws Throwable {
         Set<Patient> patients = new HashSet<>();
-        patients.add(generatePatient("patient1", 24, "StabbingChestPain", "EKG", "Myocarditis"));
-        patients.add(generatePatient("patient2", 24, "Dyspnoea", "ChestXRay", "Pericarditis"));
-        patients.add(generatePatient("patient3", 60, "StabbingChestPain", "ChestXRay", "LungCancer"));
+        patients.add(generatePatient("patient1", 24f, "StabbingChestPain", "EKG", "Myocarditis"));
+        patients.add(generatePatient("patient2", 24f, "Dyspnoea", "ChestXRay", "Pericarditis"));
+        patients.add(generatePatient("patient3", 60f, "StabbingChestPain", "ChestXRay", "LungCancer"));
 
         Set<ObjectProperty> predicateCategories = singleton(findEntity("hasDisease", OBJECT_PROPERTIES));
 
@@ -163,9 +163,9 @@ public class MachineLearningTest {
     }
 
 
-    private Patient generatePatient(String patientId, Integer age, String symptom, String negativeTest, String disease) {
+    private Patient generatePatient(String patientId, Float age, String symptom, String negativeTest, String disease) {
         Patient patient = new Patient(patientId);
-        patient.setIntegerProperty("age", age);
+        patient.setNumericProperty("age", age);
         patient.setEntityProperty("hasSymptom", findEntity(symptom, ENTITIES));
         patient.setEntityProperty("negativeTest", findEntity(negativeTest, ENTITIES));
         patient.setEntityProperty("hasDisease", findEntity(disease, ENTITIES));
