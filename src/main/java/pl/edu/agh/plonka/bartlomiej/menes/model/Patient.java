@@ -22,6 +22,7 @@ public class Patient extends Entity implements Comparable<Patient> {
     private final Map<String, Set<String>> stringProperties = new HashMap<>();
     private final Map<String, Set<Float>> numericProperties = new HashMap<>();
     private final Map<String, Set<Entity>> entityProperties = new HashMap<>();
+    private final Map<String, Set<Boolean>> booleanProperties = new HashMap<>();
 
     private final Map<String, Set<String>> inferredStringProperties = new HashMap<>();
     private final Map<String, Set<Float>> inferredNumericProperties = new HashMap<>();
@@ -104,6 +105,10 @@ public class Patient extends Entity implements Comparable<Patient> {
         setProperty(entityProperties, propertyName, value);
     }
 
+    public void setBooleanProperty(String propertyName, Boolean value) {
+        setProperty(booleanProperties, propertyName, value);
+    }
+
     public void setStringProperties(String propertyName, Collection<String> values) {
         setProperties(stringProperties, propertyName, values);
     }
@@ -114,6 +119,22 @@ public class Patient extends Entity implements Comparable<Patient> {
 
     public void setEntityProperties(String propertyName, Collection<Entity> values) {
         setProperties(entityProperties, propertyName, values);
+    }
+
+    public void setBooleanProperties(String propertyName, Collection<Boolean> values) {
+        setProperties(booleanProperties, propertyName, values);
+    }
+
+    public void clearEntityProperties(String propertyName) {
+        entityProperties.remove(propertyName);
+    }
+
+    public void clearNumericProperties(String propertyName) {
+        numericProperties.remove(propertyName);
+    }
+
+    public void clearStringProperties(String propertyName) {
+        stringProperties.remove(propertyName);
     }
 
     private <T> T getProperty(Map<String, Set<T>> propertyMap, String propertyName) {
@@ -149,8 +170,16 @@ public class Patient extends Entity implements Comparable<Patient> {
         return numericProperties;
     }
 
-    public Set<Float> getFloatProperties(String propertyName) {
+    public Set<Float> getNumericProperties(String propertyName) {
         return numericProperties.get(propertyName);
+    }
+
+    public Map<String, Set<Boolean>> getBooleanProperties() {
+        return booleanProperties;
+    }
+
+    public Set<Boolean> getBooleanProperties(String propertyName) {
+        return getProperties(booleanProperties, propertyName);
     }
 
     public Map<String, Set<Entity>> getEntityProperties() {
@@ -158,7 +187,11 @@ public class Patient extends Entity implements Comparable<Patient> {
     }
 
     public Set<Entity> getEntityProperties(String propertyName) {
-        Set<Entity> properties = entityProperties.get(propertyName);
+        return getProperties(entityProperties, propertyName);
+    }
+
+    private <T> Set<T> getProperties(Map<String, Set<T>> propertyMap, String propertyName) {
+        Set<T> properties = propertyMap.get(propertyName);
         if (properties == null)
             return emptySet();
         else

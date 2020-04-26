@@ -48,6 +48,10 @@ public class RulesManager {
         rules.forEach(rule -> ruleOntology.deleteSWRLRule(rule.getName()));
     }
 
+    public void deleteRules() {
+        ruleOntology.reset();
+    }
+
     public Collection<Rule> loadRules(Set<OntologyClass> classes, Set<Entity> entities) {
         Collection<Rule> rules = new ArrayList<>();
         for (SWRLAPIRule swrlRule : ruleOntology.getSWRLRules()) {

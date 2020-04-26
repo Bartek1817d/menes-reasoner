@@ -14,6 +14,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
+import static pl.edu.agh.plonka.bartlomiej.menes.model.Property.isBooleanProperty;
 import static pl.edu.agh.plonka.bartlomiej.menes.model.Property.isNumericProperty;
 import static pl.edu.agh.plonka.bartlomiej.menes.utils.Others.findEntity;
 
@@ -49,48 +50,37 @@ class EntitiesLoader {
                 .collect(toSet());
     }
 
-    public Set<NumericProperty> loadNumericProperties() {
-        return ontology.getDataPropertiesInSignature()
-                .stream()
-                .map(this::loadNumericProperty)
-                .filter(Objects::nonNull)
-                .collect(toSet());
+    public Properties loadProperties(Set<OntologyClass> classes) {
+        Properties properties = new Properties();
+        ontology.getObjectPropertiesInSignature().forEach(property -> fillProperties(property, classes, properties));
+        ontology.getDataPropertiesInSignature().forEach(property -> fillProperties(property, properties));
+        return properties;
     }
 
-    public Set<Property> loadStringProperties() {
-        return ontology.getDataPropertiesInSignature()
-                .stream()
-                .map(this::loadStringProperty)
-                .filter(Objects::nonNull)
-                .collect(toSet());
+    private void fillProperties(OWLObjectProperty owlProperty, Set<OntologyClass> classes, Properties properties) {
+        String propertyName = renderer.render(owlProperty);
+        if (!validateObjectProperty(propertyName, owlProperty))
+            return;
+
+        Set<OntologyClass> rangeTypes = getObjectPropertyRangeTypes(owlProperty, classes);
+
+        ObjectProperty property = new ObjectProperty(propertyName);
+        property.setRanges(rangeTypes);
+
+        properties.entityProperties.add(property);
     }
 
-    public Set<ObjectProperty> loadObjectProperties(Set<OntologyClass> classes) {
-        return ontology.getObjectPropertiesInSignature()
-                .stream()
-                .map(p -> loadObjectProperty(p, classes))
-                .filter(Objects::nonNull)
-                .collect(toSet());
-    }
-
-    private NumericProperty loadNumericProperty(OWLDataProperty owlDataProperty) {
-        String propertyName = renderer.render(owlDataProperty);
-        if (!validateDataProperty(propertyName, owlDataProperty))
-            return null;
-        Set<String> rangeTypes = getDataPropertyRangeTypes(owlDataProperty);
-        if (!isNumericProperty(rangeTypes))
-            return null;
-        return new NumericProperty(propertyName);
-    }
-
-    private Property loadStringProperty(OWLDataProperty owlDataProperty) {
-        String propertyName = renderer.render(owlDataProperty);
-        if (!validateDataProperty(propertyName, owlDataProperty))
-            return null;
-        Set<String> rangeTypes = getDataPropertyRangeTypes(owlDataProperty);
+    private void fillProperties(OWLDataProperty owlProperty, Properties properties) {
+        String propertyName = renderer.render(owlProperty);
+        if (!validateDataProperty(propertyName, owlProperty))
+            return;
+        Set<String> rangeTypes = getDataPropertyRangeTypes(owlProperty);
         if (isNumericProperty(rangeTypes))
-            return null;
-        return new Property(propertyName);
+            properties.numericProperties.add(new NumericProperty(propertyName));
+        else if (isBooleanProperty(rangeTypes))
+            properties.booleanProperties.add(new Property(propertyName));
+        else
+            properties.stringProperties.add(new Property(propertyName));
     }
 
     private boolean validateDataProperty(String propertyName, OWLDataProperty owlDataProperty) {
@@ -133,18 +123,6 @@ class EntitiesLoader {
                 .map(id -> findEntity(id, classes))
                 .filter(Objects::nonNull)
                 .collect(toSet());
-    }
-
-    private ObjectProperty loadObjectProperty(OWLObjectProperty owlObjectProperty, Set<OntologyClass> classes) {
-        String propertyName = renderer.render(owlObjectProperty);
-        if (!validateObjectProperty(propertyName, owlObjectProperty))
-            return null;
-
-        Set<OntologyClass> rangeTypes = getObjectPropertyRangeTypes(owlObjectProperty, classes);
-
-        ObjectProperty property = new ObjectProperty(propertyName);
-        property.setRanges(rangeTypes);
-        return property;
     }
 
     private Map<String, String> getLabel(OWLEntity owlClass) {

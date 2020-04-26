@@ -18,4 +18,8 @@ public class Property extends Entity {
         return !disjoint(rangeTypes, INTEGER_DATA_TYPES);
     }
 
+    public static boolean isBooleanProperty(Set<String> rangeTypes) {
+        return rangeTypes.size() == 1 && rangeTypes.contains("boolean");
+    }
+
 }

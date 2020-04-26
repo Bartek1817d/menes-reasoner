@@ -23,7 +23,7 @@ public class MachineLearning {
 
     // 0 for restrictive, 1 for general
     private static final float epsilon = 0.5f;
-    private OntologyWrapper ontology;
+    private final OntologyWrapper ontology;
 
     public MachineLearning(OntologyWrapper ontology) {
         this.ontology = ontology;
@@ -188,7 +188,6 @@ public class MachineLearning {
                     .average()
                     .orElseThrow(RuntimeException::new);
         } catch (RuntimeException e) {
-            LOG.error("lol");
             return null;
         }
 

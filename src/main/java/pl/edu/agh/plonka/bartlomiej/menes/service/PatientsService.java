@@ -1,7 +1,5 @@
 package pl.edu.agh.plonka.bartlomiej.menes.service;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.slf4j.Logger;
@@ -27,35 +25,44 @@ public class PatientsService {
     private static final Logger LOG = getLogger(PatientsService.class);
 
     private OntologyWrapper ontology;
-    private ObservableList<Patient> patients = FXCollections.observableArrayList();
-    private ObservableList<Rule> rules = FXCollections.observableArrayList();
+    private MachineLearning machineLearning;
+    private Set<Patient> patients;
+    private Set<Rule> rules;
 
     public PatientsService(String url) throws OWLOntologyCreationException {
         createKnowledgeBase(url);
     }
 
-    public PatientsService(File file) throws OWLOntologyCreationException {
+    public PatientsService(File file, MachineLearning machineLearning) throws OWLOntologyCreationException {
         createKnowledgeBase(file);
+        this.machineLearning = machineLearning;
+    }
+
+    public PatientsService(OntologyWrapper ontology, MachineLearning machineLearning) {
+        this.ontology = ontology;
+        this.machineLearning = machineLearning;
+        this.patients = new HashSet<>(ontology.getPatients());
+        this.rules = new HashSet<>(ontology.getRules());
     }
 
     public void createKnowledgeBase(String url) throws OWLOntologyCreationException {
         ontology = new OntologyWrapper(url);
-        patients.clear();
-        rules.clear();
+        patients = new HashSet<>();
+        rules = new HashSet<>();
     }
 
     public void createKnowledgeBase(File file) throws OWLOntologyCreationException {
         ontology = new OntologyWrapper(file);
-        patients.setAll(ontology.getPatients());
-        rules.setAll(ontology.getRules());
+        patients = new HashSet<>(ontology.getPatients());
+        rules = new HashSet<>(ontology.getRules());
     }
 
     public void saveKnowledgeBase(File file) throws OWLOntologyStorageException {
         ontology.saveOntologyToFile(file);
     }
 
-    public ObservableList<Patient> getPatients() {
-        return patients;
+    public Set<Patient> getPatients() {
+        return new HashSet<>(patients);
     }
 
     public void addPatient(Patient patient) {
@@ -76,6 +83,11 @@ public class PatientsService {
         ontology.deleteEntity(patient);
     }
 
+    public void deleteAllPatients() {
+        patients.forEach(ontology::deleteEntity);
+        patients.clear();
+    }
+
     public void deletePatients(Collection<Patient> patients) {
         this.patients.removeAll(patients);
         ontology.deletePatients(patients);
@@ -86,8 +98,8 @@ public class PatientsService {
         return patients;
     }
 
-    public ObservableList<Rule> getRules() {
-        return rules;
+    public Set<Rule> getRules() {
+        return new HashSet<>(rules);
     }
 
     public void addRule(Rule rule) throws RuleAlreadyExistsException, CreateRuleException {
@@ -115,6 +127,11 @@ public class PatientsService {
         updatePatients(patients);
     }
 
+    public void deleteAllRules() {
+        rules.clear();
+        ontology.deleteRules();
+    }
+
     public void editPatient(Patient patient) {
         ontology.updatePatient(patient);
     }
@@ -127,7 +144,11 @@ public class PatientsService {
         ontology.changeLanguage();
     }
 
-    public void infer(RequiredEntitiesToLearn requiredEntities, MachineLearning machineLearning, Set<ObjectProperty> predicateCategories) throws Throwable {
+    public void infer() {
+        patients.forEach(ontology::getInferredPatient);
+    }
+
+    public void infer(RequiredEntitiesToLearn requiredEntities, Set<ObjectProperty> predicateCategories) throws Throwable {
         Collection<Patient> invalidPatients = patients.stream()
                 .map(ontology::getInferredPatient)
                 .filter(requiredEntities::invalidPatient)
@@ -135,16 +156,16 @@ public class PatientsService {
         if (!invalidPatients.isEmpty()) {
             Set<Patient> trainingSet = new HashSet<>(getPatients());
             trainingSet.removeAll(invalidPatients);
-            learnNewRules(machineLearning, trainingSet, predicateCategories);
+            learnNewRules(trainingSet, predicateCategories);
             patients.forEach(ontology::getInferredPatient);
         }
     }
 
-    public void learnNewRules(MachineLearning machineLearning, Set<ObjectProperty> predicateCategories) throws Throwable {
-        learnNewRules(machineLearning, new HashSet<>(patients), predicateCategories);
+    public Set<Rule> learnNewRules(Set<ObjectProperty> predicateCategories) throws Throwable {
+        return learnNewRules(new HashSet<>(patients), predicateCategories);
     }
 
-    public void learnNewRules(MachineLearning machineLearning, Set<Patient> trainingSet, Set<ObjectProperty> predicateCategories) throws Throwable {
+    public Set<Rule> learnNewRules(Set<Patient> trainingSet, Set<ObjectProperty> predicateCategories) throws Throwable {
         Collection<Rule> newGeneratedRules = machineLearning.sequentialCovering(trainingSet, predicateCategories);
         Set<Rule> oldGeneratedRules = getRules()
                 .stream()
@@ -152,6 +173,7 @@ public class PatientsService {
                 .collect(toSet());
         deleteRules(oldGeneratedRules);
         addRules(newGeneratedRules);
+        return new HashSet<>(rules);
     }
 
 
