@@ -68,9 +68,6 @@ public class MachineLearning {
         int ruleIdx = 1;
         while (assertPatientWithCategoryInSet(uncoveredSet, category)) {
             LOG.info("Remained {} uncovered patients for category {}", uncoveredSet.size(), category);
-            if (uncoveredSet.size() == 167) {
-                LOG.info("ok");
-            }
             Complex complex = findComplex(trainingSet, uncoveredSet, category, premiseProperties);
             removeCoveredExamples(uncoveredSet, complex);
             Rule rule = complex.generateRule(generateRuleName(category, ruleIdx++), category, ontology);
