@@ -45,8 +45,13 @@ public class TestPatient {
                 .entrySet()
                 .stream()
                 .allMatch(category ->
-                        patient.getEntityProperties(category.getKey())
-                                .containsAll(category.getValue())
+                        {
+                            Set<Entity> inferredProperties = patient.getInferredEntityProperties(category.getKey());
+                            if (inferredProperties == null)
+                                return false;
+                            return inferredProperties
+                                    .containsAll(category.getValue());
+                        }
                 );
     }
 }
