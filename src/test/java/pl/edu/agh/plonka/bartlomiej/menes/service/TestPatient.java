@@ -41,7 +41,11 @@ public class TestPatient {
     }
 
     public boolean invalidPatient() {
-        return !trueEntityCategoryValues
+        return !validPatient();
+    }
+
+    public boolean validPatient() {
+        return trueEntityCategoryValues
                 .entrySet()
                 .stream()
                 .allMatch(category ->

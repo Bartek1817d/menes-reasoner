@@ -5,12 +5,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import pl.edu.agh.plonka.bartlomiej.menes.model.ObjectProperty;
 import pl.edu.agh.plonka.bartlomiej.menes.model.Patient;
+import pl.edu.agh.plonka.bartlomiej.menes.model.rule.Rule;
 
 import java.io.File;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.stream.Collectors.toSet;
+import static org.junit.Assert.assertEquals;
 
 public class HeartDiseasesTest {
 
@@ -32,23 +34,23 @@ public class HeartDiseasesTest {
     public void setUp() throws Exception {
         service.deleteAllRules();
         service.deleteAllPatients();
-        service.addPatients(patients);
-        service.saveKnowledgeBase(new File("src/test/resources/heart_disease2.rdf"));
     }
 
     @Test
     public void test() throws Throwable {
-//        Set<ObjectProperty> categories = ontology.getEntityProperties()
-//                .stream()
-//                .filter(property -> property.getID().equals("ill"))
-//                .collect(toSet());
-//        MachineLearningInput<Patient> input = prepareMachineLearningInput(2, categories);
-//        service.addPatients(input.trainingSet);
-//        service.learnNewRules(categories);
-//        service.addPatients(input.testSet.stream().map(TestPatient::getPatient).collect(toSet()));
-//        service.infer();
-//        long invalidInferences = input.testSet.stream().filter(TestPatient::invalidPatient).count();
-//        assertEquals(0, invalidInferences);
+        Set<ObjectProperty> categories = ontology.getEntityProperties()
+                .stream()
+                .filter(property -> property.getID().equals("ill"))
+                .collect(toSet());
+        MachineLearningInput<Patient> input = prepareMachineLearningInput(304, categories);
+        service.addPatients(input.trainingSet);
+        Set<Rule> rules = service.learnNewRules(categories);
+        service.addPatients(input.testSet.stream().map(TestPatient::getPatient).collect(toSet()));
+        service.infer();
+        Set<Patient> invalidPatients = input.testSet.stream().filter(TestPatient::invalidPatient).map(TestPatient::getPatient).collect(toSet());
+        Set<Patient> validPatients = input.testSet.stream().filter(TestPatient::validPatient).map(TestPatient::getPatient).collect(toSet());
+
+        assertEquals(0, invalidPatients.size());
     }
 
     private MachineLearningInput<Patient> prepareMachineLearningInput(int trainingCount, Set<ObjectProperty> categories) {
